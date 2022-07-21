@@ -1,8 +1,8 @@
-use std::io::prelude::*;
 use std::error::Error;
-use std::io::BufReader;
+use csv::{ReaderBuilder, Trim};
 use std::fs::File;
 use serde::Deserialize;
+use std::fmt;
 
 pub struct Config {
     pub filename: String,
@@ -28,44 +28,73 @@ impl Config {
 pub fn run(config:Config) -> Result<(), Box<dyn Error>> {
     println!("running with filename '{}'", config.filename);
 
-    // let mut reader = csv::Reader::from_reader(io::std)
-    read_iter(&config.filename, process_line)
-
-    // Ok(())
+    read_iter(&config.filename, process_transaction)
 }
 
-fn read_iter(filename: &str, func: fn(&str)) -> Result<(), Box<dyn Error>> {
+fn read_iter(filename: &str, func: fn(&Transaction)) -> Result<(), Box<dyn Error>> {
     let file = File::open(filename)?;
-    let reader = BufReader::new(file);
+    let mut reader = ReaderBuilder::new()
+        .trim(Trim::All)
+        .from_reader(file);
 
-    for line in reader.lines() {
-        func(&line.unwrap());
+    for result in reader.deserialize() {
+        let transaction: Transaction = result?;
+        func(&transaction);
     }
 
     Ok(())
 }
 
-fn process_line(line: &str) {
-    println!("line: {}", line);
+fn process_transaction(transaction: &Transaction) {
+    // println!("transaction: {:?}", transaction);
+    transaction.print();
 }
 
 #[derive(Debug, Deserialize)]
 enum TransactionType {
+    #[serde(rename = "deposit")]
     Deposit,
+    #[serde(rename = "withdrawal")]
     Withdrawal,
+    #[serde(rename = "dispute")]
     Dispute,
+    #[serde(rename = "resolve")]
     Resolve,
+    #[serde(rename = "chargeback")]
     Chargeback
+}
+
+impl fmt::Display for TransactionType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            TransactionType::Deposit    => write!(f, "Deposit   "),
+            TransactionType::Withdrawal => write!(f, "Withdrawal"),
+            TransactionType::Dispute    => write!(f, "Dispute   "),
+            TransactionType::Resolve    => write!(f, "Resolve   "),
+            TransactionType::Chargeback => write!(f, "Chargeback"),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Transaction {
+    #[serde(rename = "type")]
     tx_type: TransactionType,
+    #[serde(rename = "client")]
     client_id: u16,
+    #[serde(rename = "tx")]
     tx_id: u32,
+    #[serde(rename = "amount")]
     amount: Option<f64>,
 }
 
-// impl Transaction {
-
-// }
+impl Transaction {
+    fn print(&self) {
+        println!("Transaction - type: {}, client: {:4?}, tx: {:8?}, amount: {:?}",
+            self.tx_type,
+            self.client_id,
+            self.tx_id,
+            self.amount
+        );
+    }
+}
