@@ -29,7 +29,7 @@ impl Config {
 pub fn run(config:Config) -> Result<(), Box<dyn Error>> {
     println!("running with filename '{}'", config.filename);
 
-    let reader = read_iter(&config.filename).unwrap();
+    let reader = read_iter(&config.filename)?;
     match stuff(reader, process_transaction) {
         Err(error) => Err(error.into()),
         _other => Ok(()),
@@ -38,7 +38,7 @@ pub fn run(config:Config) -> Result<(), Box<dyn Error>> {
 
 fn read_iter(filename: &str) -> Result<Reader<File>, Box<dyn Error>> {
     let file = File::open(filename)?;
-    let mut reader = ReaderBuilder::new()
+    let reader = ReaderBuilder::new()
         .trim(Trim::All)
         .from_reader(file);
 
