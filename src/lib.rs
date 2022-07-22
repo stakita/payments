@@ -1,8 +1,9 @@
 use std::error::Error;
-use csv::{ReaderBuilder, Trim};
+use csv::{ReaderBuilder, Trim, Reader};
 use std::fs::File;
 use serde::Deserialize;
 use std::fmt;
+use std::iter::Iterator;
 
 pub struct Config {
     pub filename: String,
@@ -28,26 +29,48 @@ impl Config {
 pub fn run(config:Config) -> Result<(), Box<dyn Error>> {
     println!("running with filename '{}'", config.filename);
 
-    read_iter(&config.filename, process_transaction)
+    let reader = read_iter(&config.filename).unwrap();
+    match stuff(reader, process_transaction) {
+        Err(error) => Err(error.into()),
+        _other => Ok(()),
+    }
 }
 
-fn read_iter(filename: &str, func: fn(&Transaction)) -> Result<(), Box<dyn Error>> {
+fn read_iter(filename: &str) -> Result<Reader<File>, Box<dyn Error>> {
     let file = File::open(filename)?;
     let mut reader = ReaderBuilder::new()
         .trim(Trim::All)
         .from_reader(file);
 
-    for result in reader.deserialize() {
-        let transaction: Transaction = result?;
-        func(&transaction);
+    Ok(reader)
+}
+
+fn stuff(mut reader: Reader<File>, func: fn(&Transaction)) -> Result<(), String> {
+    let line_offset = 2;
+    let mut res = Ok(());
+    for (i, result) in reader.deserialize::<Transaction>().enumerate() {
+        println!("i: {}", i);
+        match result {
+            Ok(transaction) => {
+                let check = transaction.check();
+                match check {
+                    Ok(()) => func(&transaction),
+                    Err(error) => {
+                        res = Err(format!("Invalid transaction on line {}: ({}) {}", i + line_offset, error, transaction.format()));
+                        break;
+                    }
+                }
+                func(&transaction);
+            },
+            Err(error) => eprintln!("error: {}", error),
+        }
     }
 
-    Ok(())
+    res
 }
 
 fn process_transaction(transaction: &Transaction) {
-    // println!("transaction: {:?}", transaction);
-    transaction.print();
+    println!("transaction: {:?}", transaction.format());
 }
 
 #[derive(Debug, Deserialize)]
@@ -88,13 +111,33 @@ pub struct Transaction {
     amount: Option<f64>,
 }
 
-impl Transaction {
-    fn print(&self) {
-        println!("Transaction - type: {}, client: {:4?}, tx: {:8?}, amount: {:?}",
+impl<'a> Transaction {
+    fn format(&self) -> String {
+        format!("Transaction {{ type: {}, client: {:4?}, tx: {:8?}, amount: {:?} }}",
             self.tx_type,
             self.client_id,
             self.tx_id,
             self.amount
-        );
+        )
+    }
+
+    fn check(&self) -> Result<(), &str> {
+        match self.tx_type {
+            TransactionType::Dispute |
+            TransactionType::Resolve |
+            TransactionType::Chargeback => {
+                match self.amount {
+                    None => Ok(()),
+                    _other => Err("Transaction type cannot have an amounts field"),
+                }
+            },
+            TransactionType::Deposit |
+            TransactionType::Withdrawal => {
+                match self.amount {
+                    None => Err("Transaction type must have an amounts field"),
+                    _other => Ok(()),
+                }
+            },
+        }
     }
 }
