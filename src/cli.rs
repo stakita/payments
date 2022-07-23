@@ -1,9 +1,10 @@
-use std::error::Error;
-use csv::{ReaderBuilder, Trim, Reader};
-use std::fs::File;
-use serde::Deserialize;
-use std::fmt;
+// use std::error::Error;
+// use csv::{ReaderBuilder, Trim, Reader};
+// use std::fs::File;
+// use serde::Deserialize;
+// use std::fmt;
 use std::iter::Iterator;
+
 
 pub struct Config {
     pub filename: String,
@@ -25,18 +26,18 @@ impl Config {
         })
     }
 }
-
+/*
 pub fn run(config:Config) -> Result<(), Box<dyn Error>> {
     println!("running with filename '{}'", config.filename);
 
-    let reader = read_iter(&config.filename)?;
-    match stuff(reader, process_transaction) {
+    let transaction_reader = transaction_line_iter(&config.filename)?;
+    match process_lines(transaction_reader, process_transaction) {
         Err(error) => Err(error.into()),
         _other => Ok(()),
     }
 }
 
-fn read_iter(filename: &str) -> Result<Reader<File>, Box<dyn Error>> {
+fn transaction_line_iter(filename: &str) -> Result<Reader<File>, Box<dyn Error>> {
     let file = File::open(filename)?;
     let reader = ReaderBuilder::new()
         .trim(Trim::All)
@@ -45,32 +46,31 @@ fn read_iter(filename: &str) -> Result<Reader<File>, Box<dyn Error>> {
     Ok(reader)
 }
 
-fn stuff(mut reader: Reader<File>, func: fn(&Transaction)) -> Result<(), String> {
+fn process_lines(mut reader: Reader<File>, func: fn(&TransactionLine)) -> Result<(), String> {
     let line_offset = 2;
     let mut res = Ok(());
-    for (i, result) in reader.deserialize::<Transaction>().enumerate() {
+    for (i, result) in reader.deserialize::<TransactionLine>().enumerate() {
         println!("i: {}", i);
-        match result {
-            Ok(transaction) => {
-                let check = transaction.check();
-                match check {
-                    Ok(()) => func(&transaction),
-                    Err(error) => {
-                        res = Err(format!("Invalid transaction on line {}: ({}) {}", i + line_offset, error, transaction.format()));
-                        break;
-                    }
-                }
-                func(&transaction);
+        match transaction.validate() {
+            Ok(()) => match func(&transaction) {
+                Err(error) => {
+                    eprintln!("recoverable error: {}", error);
+                },
+                _other => (),
+                Err(error) => eprintln!("error: {}", error),
             },
-            Err(error) => eprintln!("error: {}", error),
-        }
+            Err(error) => eprintln!("Error: {}", error),
+        };
     }
 
     res
 }
 
-fn process_transaction(transaction: &Transaction) {
-    println!("transaction: {:?}", transaction.format());
+fn process_transaction(transaction: &TransactionLine) {
+    // println!("transaction: {:?}", transaction.format());
+
+    Ok(()) => println!("doing stuff with transaction: {}", transaction.format()),
+    Err(error) => Err(format!("Invalid transaction on line {}: ({}) {}", i + line_offset, error, transaction.format()));
 }
 
 #[derive(Debug, Deserialize)]
@@ -100,7 +100,7 @@ impl fmt::Display for TransactionType {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Transaction {
+pub struct TransactionLine {
     #[serde(rename = "type")]
     tx_type: TransactionType,
     #[serde(rename = "client")]
@@ -111,9 +111,9 @@ pub struct Transaction {
     amount: Option<f64>,
 }
 
-impl<'a> Transaction {
+impl<'a> TransactionLine {
     fn format(&self) -> String {
-        format!("Transaction {{ type: {}, client: {:4?}, tx: {:8?}, amount: {:?} }}",
+        format!("TransactionLine {{ type: {}, client: {:4?}, tx: {:8?}, amount: {:?} }}",
             self.tx_type,
             self.client_id,
             self.tx_id,
@@ -121,23 +121,24 @@ impl<'a> Transaction {
         )
     }
 
-    fn check(&self) -> Result<(), &str> {
+    fn validate(&self) -> Result<(), &str> {
         match self.tx_type {
             TransactionType::Dispute |
             TransactionType::Resolve |
             TransactionType::Chargeback => {
                 match self.amount {
                     None => Ok(()),
-                    _other => Err("Transaction type cannot have an amounts field"),
+                    _other => Err("TransactionLine type cannot have an amounts field"),
                 }
             },
             TransactionType::Deposit |
             TransactionType::Withdrawal => {
                 match self.amount {
-                    None => Err("Transaction type must have an amounts field"),
+                    None => Err("TransactionLine type must have an amounts field"),
                     _other => Ok(()),
                 }
             },
         }
     }
 }
+*/
