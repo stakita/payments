@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 csv = "1.1"
 serde = { version = "1", features = ["derive"] }
+anyhow = "1.0"
 

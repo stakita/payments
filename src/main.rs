@@ -1,6 +1,8 @@
 use std::env;
 use std::process;
-use crate::cli::Config;
+use crate::cli::{Config, run};
+#[macro_use]
+extern crate anyhow;
 
 pub mod cli;
 
@@ -10,8 +12,8 @@ fn main() {
         process::exit(2);
     });
 
-    // if let Err(e) = payments::run(config) {
-    //     eprintln!("Application error: {}", e);
-    //     process::exit(1);
-    // }
+    if let Err(e) = run(config) {
+        eprintln!("Application error: {}", e);
+        process::exit(1);
+    }
 }
