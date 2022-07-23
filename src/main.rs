@@ -1,6 +1,8 @@
 use std::env;
 use std::process;
-use payments::Config;
+use crate::cli::Config;
+
+pub mod cli;
 
 fn main() {
     let config = Config::new(env::args()).unwrap_or_else(|err| {
@@ -8,8 +10,8 @@ fn main() {
         process::exit(2);
     });
 
-    if let Err(e) = payments::run(config) {
-        eprintln!("Application error: {}", e);
-        process::exit(1);
-    }
+    // if let Err(e) = payments::run(config) {
+    //     eprintln!("Application error: {}", e);
+    //     process::exit(1);
+    // }
 }
