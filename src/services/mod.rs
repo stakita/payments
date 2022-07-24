@@ -1,37 +1,46 @@
 
-// Todo: is this needed?
-// enum Transaction {
-//     Deposit { client_id: u16, tx_id: u32, amount: f64 },
-//     Widthdrawal { client_id: u16, tx_id: u32, amount: f64 },
-//     Dispute { client_id: u16, tx_id: u32 },
-//     Resolve { client_id: u16, tx_id: u32 },
-//     Chargeback { client_id: u16, tx_id: u32 },
-// }
+use anyhow::Result;
 
-pub mod transaction {
-    use anyhow::Result;
+pub trait TransactionServiceTrait {
+    fn deposit(&self, client_id: u16, tx_id: u32, amount: f64) -> Result<()>;
+    fn withdrawal(&self, client_id: u16, tx_id: u32, amount: f64) -> Result<()>;
+    fn dispute(&self, client_id: u16, tx_id: u32) -> Result<()>;
+    fn resolve(&self, client_id: u16, tx_id: u32) -> Result<()>;
+    fn chargeback(&self, client_id: u16, tx_id: u32) -> Result<()>;
+}
 
-    pub fn deposit(client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
+pub struct TransactionService;
+
+impl TransactionService {
+    pub fn new() -> TransactionService {
+        TransactionService {}
+    }
+}
+
+
+impl TransactionServiceTrait for TransactionService {
+
+    fn deposit(&self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
         eprintln!("deposit");
         Ok(())
     }
 
-    pub fn withdrawal(client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
+    fn withdrawal(&self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
         eprintln!("withdrawal");
         Ok(())
     }
 
-    pub fn dispute(client_id: u16, tx_id: u32) -> Result<()> {
+    fn dispute(&self, client_id: u16, tx_id: u32) -> Result<()> {
         eprintln!("dispute");
         Ok(())
     }
 
-    pub fn resolve(client_id: u16, tx_id: u32) -> Result<()> {
+    fn resolve(&self, client_id: u16, tx_id: u32) -> Result<()> {
         eprintln!("resolve");
         Ok(())
     }
 
-    pub fn chargeback(client_id: u16, tx_id: u32) -> Result<()> {
+    fn chargeback(&self, client_id: u16, tx_id: u32) -> Result<()> {
         eprintln!("chargeback");
         Ok(())
     }

@@ -8,6 +8,7 @@ use anyhow::Result;
 extern crate anyhow;
 
 mod services;
+use crate::services::{TransactionService, TransactionServiceTrait};
 
 pub struct Config {
     pub filename: String,
@@ -48,6 +49,9 @@ fn transaction_line_iter(filename: &str) -> Result<Reader<File>> {
 }
 
 fn process_lines(mut reader: Reader<File>) -> Result<()> {
+    // Instantiate here to inject the service into the application functions, specifically process_transaction()
+    let transaction_service = TransactionService::new();
+
     let line_offset = 2;
     for (i, line_result) in reader.deserialize::<TransactionLine>().enumerate() {
         // TODO: remove
@@ -58,36 +62,36 @@ fn process_lines(mut reader: Reader<File>) -> Result<()> {
             anyhow!("Error processing input line {}: {}", i + line_offset, error)
         })?;
 
-        process_transaction(&transaction).map_err(|error| {
+        process_transaction(&transaction, &transaction_service).map_err(|error| {
             anyhow!("Error processing input line {}: {}", i + line_offset, error)
         })?;
     }
     Ok(())
 }
 
-fn process_transaction(transaction: &TransactionLine) -> Result<()> {
+fn process_transaction<T: TransactionServiceTrait>(transaction: &TransactionLine, transaction_service: &T) -> Result<()> {
     println!("transaction: {:?}", transaction.format());
 
     match &transaction.tx_type {
-        TransactionType::Deposit => services::transaction::deposit(
+        TransactionType::Deposit => transaction_service.deposit(
             transaction.client_id,
             transaction.tx_id,
             transaction.amount.unwrap()
         ),
-        TransactionType::Withdrawal => services::transaction::withdrawal(
+        TransactionType::Withdrawal => transaction_service.withdrawal(
             transaction.client_id,
             transaction.tx_id,
             transaction.amount.unwrap()
         ),
-        TransactionType::Dispute => services::transaction::dispute(
+        TransactionType::Dispute => transaction_service.dispute(
             transaction.client_id,
             transaction.tx_id
         ),
-        TransactionType::Resolve => services::transaction::resolve(
+        TransactionType::Resolve => transaction_service.resolve(
             transaction.client_id,
             transaction.tx_id
         ),
-        TransactionType::Chargeback => services::transaction::chargeback(
+        TransactionType::Chargeback => transaction_service.chargeback(
             transaction.client_id,
             transaction.tx_id
         ),
@@ -116,10 +120,10 @@ enum TransactionType {
 impl fmt::Display for TransactionType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            TransactionType::Deposit    => write!(f, "Deposit   "),
+            TransactionType::Deposit    => write!(f, "Deposit"),
             TransactionType::Withdrawal => write!(f, "Withdrawal"),
-            TransactionType::Dispute    => write!(f, "Dispute   "),
-            TransactionType::Resolve    => write!(f, "Resolve   "),
+            TransactionType::Dispute    => write!(f, "Dispute"),
+            TransactionType::Resolve    => write!(f, "Resolve"),
             TransactionType::Chargeback => write!(f, "Chargeback"),
         }
     }
@@ -165,5 +169,60 @@ impl<'a> TransactionLine {
                 }
             },
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct MockTransactionService {}
+
+    impl MockTransactionService {
+        fn new() -> MockTransactionService {
+            MockTransactionService {}
+        }
+    }
+
+    impl TransactionServiceTrait for MockTransactionService {
+        fn deposit(&self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
+            eprintln!("x deposit");
+            Ok(())
+        }
+
+        fn withdrawal(&self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
+            eprintln!("x withdrawal");
+            Ok(())
+        }
+
+        fn dispute(&self, client_id: u16, tx_id: u32) -> Result<()> {
+            eprintln!("x dispute");
+            Ok(())
+        }
+
+        fn resolve(&self, client_id: u16, tx_id: u32) -> Result<()> {
+            eprintln!("x resolve");
+            Ok(())
+        }
+
+        fn chargeback(&self, client_id: u16, tx_id: u32) -> Result<()> {
+            eprintln!("x chargeback");
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn test_calls_deposit() {
+        let tx_line = TransactionLine {
+            tx_type: TransactionType::Deposit,
+            client_id: 1,
+            tx_id: 1,
+            amount: Some(1.0),
+        };
+
+        let tx_service = MockTransactionService::new();
+
+        let res = process_transaction(&tx_line, &tx_service);
     }
 }
