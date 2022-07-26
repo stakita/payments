@@ -1,7 +1,12 @@
 
 use anyhow::Result;
 
-use crate::repositories::transaction::*;
+use crate::repositories::transaction::{
+    Transaction,
+    TransactionType,
+    TransactionState,
+    TransactionRepositoryTrait,
+};
 
 pub trait TransactionServiceTrait {
     fn deposit(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()>;
@@ -30,10 +35,10 @@ impl TransactionServiceTrait for TransactionService {
         eprintln!("deposit");
         self.store.insert(Transaction{
             tx_id: tx_id,
-            tx_type: transaction_type_encode(TransactionType::Deposit),
+            tx_type: Transaction::transaction_type_encode(TransactionType::Deposit),
             client_id: client_id,
             amount: amount,
-            state: transaction_state_encode(TransactionState::Normal),
+            state: Transaction::transaction_state_encode(TransactionState::Normal),
         });
         Ok(())
     }
@@ -42,10 +47,10 @@ impl TransactionServiceTrait for TransactionService {
         eprintln!("withdrawal");
         self.store.insert(Transaction{
             tx_id: tx_id,
-            tx_type: transaction_type_encode(TransactionType::Withdrawal),
+            tx_type: Transaction::transaction_type_encode(TransactionType::Withdrawal),
             client_id: client_id,
             amount: amount,
-            state: transaction_state_encode(TransactionState::Normal),
+            state: Transaction::transaction_state_encode(TransactionState::Normal),
         });
         Ok(())
     }
