@@ -1,25 +1,13 @@
 
 pub mod in_memory;
 
-#[derive(PartialEq, Clone, Debug)]
-pub struct Transaction {
-    pub tx_id: u32,
-    pub tx_type: u8,
-    pub client_id: u16,
-    pub amount: f64,
-    pub state: u8,
-}
+// Use the Transaction structure and related from core in repository layer as it is identical
+pub use crate::core::entities::transaction::{
+    Transaction,
+    TransactionType,
+    TransactionState,
+};
 
-pub enum TransactionType {
-    Deposit,
-    Withdrawal,
-}
-
-pub enum TransactionState {
-    Normal,
-    Disputed,
-    Reversed,
-}
 
 impl Transaction {
     pub fn transaction_type_encode(type_enum: TransactionType) -> u8 {

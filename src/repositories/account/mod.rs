@@ -1,14 +1,8 @@
 
 pub mod in_memory;
 
-#[derive(PartialEq, Clone, Debug)]
-pub struct Account {
-    pub client_id: u16,
-    pub available: f64,
-    pub held: f64,
-    pub total: f64,
-    pub locked: bool,
-}
+// Use the Account structure from core in repository layer as it is identical
+pub use crate::core::entities::account::Account;
 
 pub trait AccountRepositoryTrait {
     fn insert(&mut self, account: Account);
