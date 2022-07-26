@@ -1,6 +1,5 @@
 
 use std::collections::BTreeMap;
-use itertools::Itertools;
 use crate::repositories::account::{
     Account,
     AccountRepositoryTrait
@@ -30,7 +29,7 @@ impl AccountRepositoryTrait for AccountRepositoryInMemory {
 
         fn find_all(&mut self) -> Vec<&Account> {
             let mut elements = Vec::<&Account>::new();
-            for key in self.store.keys().sorted() {
+            for key in self.store.keys() {
                 elements.push(self.store.get(key).unwrap());
             }
             elements

@@ -1,6 +1,5 @@
 
 use std::collections::BTreeMap;
-use itertools::Itertools;
 use crate::repositories::transaction::{
     Transaction,
     TransactionRepositoryTrait
@@ -27,6 +26,7 @@ impl TransactionRepositoryInMemory {
 impl TransactionRepositoryTrait for TransactionRepositoryInMemory {
         fn insert(&mut self, transaction: Transaction) {
             let _ = &self.store.insert(transaction.tx_id, transaction);
+            self.print();
         }
 
         fn find(&mut self, tx_id: u32) -> Option<&Transaction> {
@@ -36,8 +36,7 @@ impl TransactionRepositoryTrait for TransactionRepositoryInMemory {
         fn find_all(&mut self) -> Vec<&Transaction> {
             let mut elements = Vec::<&Transaction>::new();
             for key in self.store.keys() {
-                let val = self.store.get(key).unwrap();
-                elements.push(val);
+                elements.push(self.store.get(key).unwrap());
             }
             elements
         }
