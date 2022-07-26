@@ -1,46 +1,66 @@
 
 use anyhow::Result;
 
+use crate::repositories::transaction::*;
+
 pub trait TransactionServiceTrait {
-    fn deposit(&self, client_id: u16, tx_id: u32, amount: f64) -> Result<()>;
-    fn withdrawal(&self, client_id: u16, tx_id: u32, amount: f64) -> Result<()>;
-    fn dispute(&self, client_id: u16, tx_id: u32) -> Result<()>;
-    fn resolve(&self, client_id: u16, tx_id: u32) -> Result<()>;
-    fn chargeback(&self, client_id: u16, tx_id: u32) -> Result<()>;
+    fn deposit(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()>;
+    fn withdrawal(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()>;
+    fn dispute(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
+    fn resolve(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
+    fn chargeback(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
 }
 
-pub struct TransactionService;
+pub struct TransactionService {
+    store: Box<dyn TransactionRepositoryTrait>
+}
 
 impl TransactionService {
-    pub fn new() -> TransactionService {
-        TransactionService {}
+    pub fn new(store: Box<dyn TransactionRepositoryTrait>) -> TransactionService {
+        TransactionService {
+            store: store,
+        }
     }
 }
 
 
 impl TransactionServiceTrait for TransactionService {
 
-    fn deposit(&self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
+    fn deposit(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
         eprintln!("deposit");
+        self.store.insert(Transaction{
+            tx_id: tx_id,
+            tx_type: transaction_type_encode(TransactionType::Deposit),
+            client_id: client_id,
+            amount: amount,
+            state: transaction_state_encode(TransactionState::Normal),
+        });
         Ok(())
     }
 
-    fn withdrawal(&self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
+    fn withdrawal(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
         eprintln!("withdrawal");
+        self.store.insert(Transaction{
+            tx_id: tx_id,
+            tx_type: transaction_type_encode(TransactionType::Withdrawal),
+            client_id: client_id,
+            amount: amount,
+            state: transaction_state_encode(TransactionState::Normal),
+        });
         Ok(())
     }
 
-    fn dispute(&self, client_id: u16, tx_id: u32) -> Result<()> {
+    fn dispute(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
         eprintln!("dispute");
         Ok(())
     }
 
-    fn resolve(&self, client_id: u16, tx_id: u32) -> Result<()> {
+    fn resolve(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
         eprintln!("resolve");
         Ok(())
     }
 
-    fn chargeback(&self, client_id: u16, tx_id: u32) -> Result<()> {
+    fn chargeback(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
         eprintln!("chargeback");
         Ok(())
     }

@@ -11,6 +11,7 @@ pub mod repositories;
 
 mod services;
 use crate::services::{TransactionService, TransactionServiceTrait};
+use crate::repositories::transaction_in_memory::TransactionRepositoryInMemory;
 
 pub struct Config {
     pub filename: String,
@@ -52,7 +53,8 @@ fn transaction_line_iter(filename: &str) -> Result<Reader<File>> {
 
 fn process_lines(mut reader: Reader<File>) -> Result<()> {
     // Instantiate here to inject the service into the application functions, specifically process_transaction()
-    let transaction_service = TransactionService::new();
+    let transaction_repository = TransactionRepositoryInMemory::new();
+    let mut transaction_service: Box<dyn TransactionServiceTrait> = Box::new(TransactionService::new(Box::new(transaction_repository)));
 
     let line_offset = 2;
     for (i, line_result) in reader.deserialize::<TransactionLine>().enumerate() {
@@ -64,14 +66,14 @@ fn process_lines(mut reader: Reader<File>) -> Result<()> {
             anyhow!("Error processing input line {}: {}", i + line_offset, error)
         })?;
 
-        process_transaction(&transaction, &transaction_service).map_err(|error| {
+        process_transaction(&transaction, &mut transaction_service).map_err(|error| {
             anyhow!("Error processing input line {}: {}", i + line_offset, error)
         })?;
     }
     Ok(())
 }
 
-fn process_transaction<T: TransactionServiceTrait>(transaction: &TransactionLine, transaction_service: &T) -> Result<()> {
+fn process_transaction(transaction: &TransactionLine, transaction_service: &mut Box<dyn TransactionServiceTrait>) -> Result<()> {
     println!("transaction: {:?}", transaction.format());
 
     match &transaction.tx_type {
@@ -97,12 +99,7 @@ fn process_transaction<T: TransactionServiceTrait>(transaction: &TransactionLine
             transaction.client_id,
             transaction.tx_id
         ),
-        _other => Err(anyhow!("Unhandled type: {}", &transaction.tx_type)),
     }
-
-    // Ok(()) => println!("doing stuff with transaction: {}", transaction.format()),
-    // Err(error) => Err(format!("Invalid transaction on line {}: ({}) {}", i + line_offset, error, transaction.format()));
-    // Ok(())
 }
 
 #[derive(Debug, Deserialize)]
