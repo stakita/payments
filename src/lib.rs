@@ -11,7 +11,7 @@ pub mod repositories;
 pub mod core;
 
 mod services;
-use crate::services::{PaymentService, PaymentServiceTrait};
+use crate::services::payment::{PaymentService, PaymentServiceTrait};
 use crate::repositories::transaction::in_memory::TransactionRepositoryInMemory;
 // use crate::repositories::account::in_memory::AccountRepositoryInMemory;
 
