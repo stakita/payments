@@ -1,4 +1,6 @@
 
+pub mod in_memory;
+
 #[derive(PartialEq, Clone, Debug)]
 pub struct Transaction {
     pub tx_id: u32,

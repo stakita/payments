@@ -11,7 +11,8 @@ pub mod repositories;
 
 mod services;
 use crate::services::{TransactionService, TransactionServiceTrait};
-use crate::repositories::transaction_in_memory::TransactionRepositoryInMemory;
+use crate::repositories::transaction::in_memory::TransactionRepositoryInMemory;
+use crate::repositories::account::in_memory::AccountRepositoryInMemory;
 
 pub struct Config {
     pub filename: String,
@@ -55,6 +56,8 @@ fn process_lines(mut reader: Reader<File>) -> Result<()> {
     // Instantiate here to inject the service into the application functions, specifically process_transaction()
     let transaction_repository = TransactionRepositoryInMemory::new();
     let mut transaction_service: Box<dyn TransactionServiceTrait> = Box::new(TransactionService::new(Box::new(transaction_repository)));
+    // let account_repository = AccountRepositoryInMemory::new();
+    // let mut account_service: Box<dyn AccountServiceTrait> = Box::new(AccountService::new(Box::new(account_repository)));
 
     let line_offset = 2;
     for (i, line_result) in reader.deserialize::<TransactionLine>().enumerate() {

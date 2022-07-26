@@ -5,45 +5,45 @@ A toy payments engine
 ## Assumptions:
 
 * Representation of dollar values
-  
+
   * With 4 decimal places precision on amounts, this implies 10k distinct steps per dollar - minimum resolvable amount is 0.0001 dollars
-  
+
   * Assuming normal real world amounts - expect transactions to be less \$1 billion (\$1e9) - may need to revisit this assumption if inflation continues at current trends
-  
+
   * This means we need to resolve steps: `1e9 * 1e4 = 1e13` - this can be represented in `ceil(log2(1e13)) = 44 bits`
-  
+
   * This is less the mantissa for a 64-bit floating point number (55 bits) so we should be able to repesent this range accurately in that representation
-  
+
   * If requirements dicatate a larger maximum transaction amount, switching to a fixed point representation (e.g `u64` for dollar amount + `u16` for decimal amount) would allow for accuracy over a wider range
-  
+
   * This could be an issue for the stored amounts fields on accounts, which could also be updated to be fixed point representation
-  
+
   * Will be using `f64` for amount represenations for this project for both transactions and account values
 
 * Dispute resolution operations (dispute, resolve, chargeback) can only occur on deposit or withdrawal operations
-  
+
   * In the case of widthdrawals, the disupted amount has a negative magnitude
 
 ## Design considerations
 
 * Because the dispute, resolve and chargeback operations don't store amounts, we need to be able to reference the originating deposit or withdrawal transactions at any time after creation
-  
+
   * The current specification states the transaction ID is a `u32` integer which implies `2^32` (~4 billion) records which is probably within the bounds of a single systems memory configuration (for development), but an obvious change to the system would be to make these transaction IDs opaque data blobs (say hashes) or `u64` integers which would require a dedicated data store
-  
+
   * A key-value or relational database could implement this, however we use a memory backed store with an abstracted inteface to allow simpler implementation during development with the option of changing out the repository implementation at some point in the future
 
 * The CLI client is the driving application of the core entities business logic, however the service level interfaces should be set up for possible integration into a web gateway or as a consumer of a streaming feed (e.g. Kafka)
-  
+
   * Transactions processed at the service level should have observable outcomes in response to a request to process a transaction:
-    
+
     1. Success - the transaction was processed normally
-    
+
     2. Error - the transaction either:
-       
+
        * Was ignored  - due to incorrect transaction-client specification
-       
+
        * Failed - due to insufficient funds
-    
+
     3. Panic - these indicate some fundamental system failure and should be caught and translated (e.g. 5xx HTTP status in the case of a web client)
 
 ## Transaction States
@@ -140,3 +140,16 @@ The state of the account must be considered during the processing of a transacti
   - further disputes/resolve/chargeback operations are rejected for locked accounts
 - Disputed amount takes account below zero
 - deposits and withdrawals can't occur on a locked account
+
+## To note:
+
+* Where a DB implementation would go
+
+* How the a DB transactions manager would be implemented
+
+* Explain dependencies:
+
+  * anyhow
+
+
+*
