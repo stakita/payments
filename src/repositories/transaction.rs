@@ -11,6 +11,5 @@ pub struct Transaction {
 pub trait TransactionRepositoryTrait {
     fn insert(&mut self, transaction: Transaction);
     fn find(&mut self, tx_id: u32) -> Option<&Transaction>;
-    // fn find_all(&mut self) -> Vec<&Transaction>;
-    fn find_all(&mut self) -> Vec<Option<&Transaction>>;
+    fn find_all(&mut self) -> Vec<&Transaction>;
 }

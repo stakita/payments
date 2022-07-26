@@ -1,5 +1,5 @@
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use itertools::Itertools;
 use crate::repositories::account::{
     Account,
@@ -7,13 +7,13 @@ use crate::repositories::account::{
 };
 
 pub struct AccountRepositoryInMemory {
-    pub store: HashMap<u16, Account>,
+    pub store: BTreeMap<u16, Account>,
 }
 
 impl AccountRepositoryInMemory {
     pub fn new() -> AccountRepositoryInMemory {
         AccountRepositoryInMemory {
-            store: HashMap::new(),
+            store: BTreeMap::new(),
         }
     }
 }
@@ -78,7 +78,7 @@ mod tests {
     }
 
     #[test]
-    fn it_can_insert_and_find_all() {
+    fn it_can_insert_and_find_all_sorted() {
         let mut ar = AccountRepositoryInMemory::new();
         let a = Account {
             client_id: 42,
@@ -102,14 +102,16 @@ mod tests {
             locked: true,
         };
 
-        AccountRepositoryTrait::insert(&mut ar, a);
-        AccountRepositoryTrait::insert(&mut ar, b);
-        AccountRepositoryTrait::insert(&mut ar, c);
+        AccountRepositoryTrait::insert(&mut ar, a.clone());
+        AccountRepositoryTrait::insert(&mut ar, b.clone());
+        AccountRepositoryTrait::insert(&mut ar, c.clone());
 
         let res = AccountRepositoryTrait::find_all(&mut ar);
         println!("res: {:?}", res);
 
-        // assert_eq!(res, &a);
+        assert_eq!(res[0], &c);
+        assert_eq!(res[1], &a);
+        assert_eq!(res[2], &b);
     }
 
 }

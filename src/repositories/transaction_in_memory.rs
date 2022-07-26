@@ -1,5 +1,5 @@
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use itertools::Itertools;
 use crate::repositories::transaction::{
     Transaction,
@@ -7,19 +7,24 @@ use crate::repositories::transaction::{
 };
 
 pub struct TransactionRepositoryInMemory {
-    pub store: HashMap<u32, Transaction>,
+    pub store: BTreeMap<u32, Transaction>,
 }
 
 impl TransactionRepositoryInMemory {
     pub fn new() -> TransactionRepositoryInMemory {
         TransactionRepositoryInMemory {
-            store: HashMap::new(),
+            store: BTreeMap::new(),
+        }
+    }
+
+    pub fn print(&self) {
+        for (key, value) in &self.store {
+            println!("key: {}, value: {:?}", key, value);
         }
     }
 }
 
 impl TransactionRepositoryTrait for TransactionRepositoryInMemory {
-
         fn insert(&mut self, transaction: Transaction) {
             let _ = &self.store.insert(transaction.tx_id, transaction);
         }
@@ -28,10 +33,11 @@ impl TransactionRepositoryTrait for TransactionRepositoryInMemory {
             self.store.get(&tx_id)
         }
 
-        fn find_all(&mut self) -> Vec<Option<&Transaction>> {
-            let mut elements = Vec::<Option<&Transaction>>::new();
-            for key in self.store.keys().sorted() {
-                elements.push(self.store.get(key));
+        fn find_all(&mut self) -> Vec<&Transaction> {
+            let mut elements = Vec::<&Transaction>::new();
+            for key in self.store.keys() {
+                let val = self.store.get(key).unwrap();
+                elements.push(val);
             }
             elements
         }
@@ -44,7 +50,7 @@ mod tests {
 
     #[test]
     fn it_can_insert_and_find() {
-        let mut ar = TransactionRepositoryInMemory::new();
+        let mut tr = TransactionRepositoryInMemory::new();
         let a = Transaction {
             tx_id: 1600002,
             tx_type: 1,
@@ -60,26 +66,26 @@ mod tests {
             state: 1,
         };
 
-        TransactionRepositoryTrait::insert(&mut ar, a.clone());
-        TransactionRepositoryTrait::insert(&mut ar, b.clone());
+        TransactionRepositoryTrait::insert(&mut tr, a.clone());
+        TransactionRepositoryTrait::insert(&mut tr, b.clone());
 
         // it finds an inserted key
-        let res = TransactionRepositoryTrait::find(&mut ar, a.tx_id).unwrap();
+        let res = TransactionRepositoryTrait::find(&mut tr, a.tx_id).unwrap();
         assert_eq!(res, &a);
 
         // it finds an inserted key
-        let res = TransactionRepositoryTrait::find(&mut ar, b.tx_id).unwrap();
+        let res = TransactionRepositoryTrait::find(&mut tr, b.tx_id).unwrap();
         assert_eq!(res, &b);
 
         // it fails to find an invalid key
-        let res = TransactionRepositoryTrait::find(&mut ar, 68);
+        let res = TransactionRepositoryTrait::find(&mut tr, 68);
         assert_eq!(res, None);
 
     }
 
     #[test]
-    fn it_can_insert_and_find_all() {
-        let mut ar = TransactionRepositoryInMemory::new();
+    fn it_can_insert_and_find_all_sorted() {
+        let mut tr = TransactionRepositoryInMemory::new();
         let a = Transaction {
             tx_id: 1600042,
             tx_type: 1,
@@ -102,19 +108,17 @@ mod tests {
             state: 2,
         };
 
-        TransactionRepositoryTrait::insert(&mut ar, a.clone());
-        TransactionRepositoryTrait::insert(&mut ar, b.clone());
-        TransactionRepositoryTrait::insert(&mut ar, c.clone());
+        TransactionRepositoryTrait::insert(&mut tr, a.clone());
+        TransactionRepositoryTrait::insert(&mut tr, b.clone());
+        TransactionRepositoryTrait::insert(&mut tr, c.clone());
 
-        let res = TransactionRepositoryTrait::find_all(&mut ar);
-        // println!("res: {:?}", res);
-        for i in 0..res.len() {
-            println!("res[{}]: {:?}", i, res.get(i).unwrap().unwrap());
-        }
+        let res = TransactionRepositoryTrait::find_all(&mut tr);
 
-        assert_eq!(res.get(0).unwrap().unwrap(), &c);
-        assert_eq!(res.get(1).unwrap().unwrap(), &a);
-        assert_eq!(res.get(2).unwrap().unwrap(), &b);
+        println!("res: {:?}", res);
+
+        assert_eq!(res[0], &c);
+        assert_eq!(res[1], &a);
+        assert_eq!(res[2], &b);
     }
 
 }
