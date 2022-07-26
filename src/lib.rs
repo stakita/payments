@@ -8,11 +8,12 @@ use anyhow::Result;
 extern crate anyhow;
 
 pub mod repositories;
+pub mod core;
 
 mod services;
-use crate::services::{TransactionService, TransactionServiceTrait};
+use crate::services::{PaymentService, PaymentServiceTrait};
 use crate::repositories::transaction::in_memory::TransactionRepositoryInMemory;
-use crate::repositories::account::in_memory::AccountRepositoryInMemory;
+// use crate::repositories::account::in_memory::AccountRepositoryInMemory;
 
 pub struct Config {
     pub filename: String,
@@ -55,7 +56,7 @@ fn transaction_line_iter(filename: &str) -> Result<Reader<File>> {
 fn process_lines(mut reader: Reader<File>) -> Result<()> {
     // Instantiate here to inject the service into the application functions, specifically process_transaction()
     let transaction_repository = TransactionRepositoryInMemory::new();
-    let mut transaction_service: Box<dyn TransactionServiceTrait> = Box::new(TransactionService::new(Box::new(transaction_repository)));
+    let mut payment_service: Box<dyn PaymentServiceTrait> = Box::new(PaymentService::new(Box::new(transaction_repository)));
     // let account_repository = AccountRepositoryInMemory::new();
     // let mut account_service: Box<dyn AccountServiceTrait> = Box::new(AccountService::new(Box::new(account_repository)));
 
@@ -69,14 +70,14 @@ fn process_lines(mut reader: Reader<File>) -> Result<()> {
             anyhow!("Error processing input line {}: {}", i + line_offset, error)
         })?;
 
-        process_transaction(&transaction, &mut transaction_service).map_err(|error| {
+        process_transaction(&transaction, &mut payment_service).map_err(|error| {
             anyhow!("Error processing input line {}: {}", i + line_offset, error)
         })?;
     }
     Ok(())
 }
 
-fn process_transaction(transaction: &TransactionLine, transaction_service: &mut Box<dyn TransactionServiceTrait>) -> Result<()> {
+fn process_transaction(transaction: &TransactionLine, transaction_service: &mut Box<dyn PaymentServiceTrait>) -> Result<()> {
     println!("transaction: {:?}", transaction.format());
 
     match &transaction.tx_type {
@@ -178,40 +179,52 @@ impl<'a> TransactionLine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::entities::account::Account;
 
-    struct MockTransactionService {}
+    struct MockPaymentService {}
 
-    impl MockTransactionService {
-        fn new() -> MockTransactionService {
-            MockTransactionService {}
+    impl MockPaymentService {
+        fn new() -> MockPaymentService {
+            MockPaymentService {}
         }
     }
 
-    impl TransactionServiceTrait for MockTransactionService {
-        fn deposit(&self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
+    impl PaymentServiceTrait for MockPaymentService {
+        fn deposit(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
             eprintln!("x deposit");
             Ok(())
         }
 
-        fn withdrawal(&self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
+        fn withdrawal(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
             eprintln!("x withdrawal");
             Ok(())
         }
 
-        fn dispute(&self, client_id: u16, tx_id: u32) -> Result<()> {
+        fn dispute(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
             eprintln!("x dispute");
             Ok(())
         }
 
-        fn resolve(&self, client_id: u16, tx_id: u32) -> Result<()> {
+        fn resolve(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
             eprintln!("x resolve");
             Ok(())
         }
 
-        fn chargeback(&self, client_id: u16, tx_id: u32) -> Result<()> {
+        fn chargeback(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
             eprintln!("x chargeback");
             Ok(())
         }
+
+        fn get_account(&self, client_id: u16) -> Account {
+            Account {
+                client_id: client_id,
+                available: 1.0,
+                held: 0.0,
+                total: 1.0,
+                locked: true,
+            }
+        }
+
     }
 
     #[test]
@@ -223,8 +236,8 @@ mod tests {
             amount: Some(1.0),
         };
 
-        let tx_service = MockTransactionService::new();
+        let mut payment_service: Box<dyn PaymentServiceTrait> = Box::new(MockPaymentService::new());
 
-        let res = process_transaction(&tx_line, &tx_service);
+        let res = process_transaction(&tx_line, &mut payment_service);
     }
 }

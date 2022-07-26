@@ -8,28 +8,32 @@ use crate::repositories::transaction::{
     TransactionRepositoryTrait,
 };
 
-pub trait TransactionServiceTrait {
+use crate::core::entities::account::Account;
+
+
+pub trait PaymentServiceTrait {
     fn deposit(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()>;
     fn withdrawal(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()>;
     fn dispute(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
     fn resolve(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
     fn chargeback(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
+    fn get_account(&self, client_id: u16) -> Account;
 }
 
-pub struct TransactionService {
+pub struct PaymentService {
     store: Box<dyn TransactionRepositoryTrait>
 }
 
-impl TransactionService {
-    pub fn new(store: Box<dyn TransactionRepositoryTrait>) -> TransactionService {
-        TransactionService {
+impl PaymentService {
+    pub fn new(store: Box<dyn TransactionRepositoryTrait>) -> PaymentService {
+        PaymentService {
             store: store,
         }
     }
 }
 
 
-impl TransactionServiceTrait for TransactionService {
+impl PaymentServiceTrait for PaymentService {
 
     fn deposit(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
         eprintln!("deposit");
@@ -69,6 +73,16 @@ impl TransactionServiceTrait for TransactionService {
         eprintln!("chargeback");
         Ok(())
     }
+
+    fn get_account(&self, client_id: u16) -> Account {
+        Account {
+            client_id: client_id,
+            available: 1.0,
+            held: 0.0,
+            total: 1.0,
+            locked: true,
+        }
+    }
 }
 
 pub mod account {
@@ -78,5 +92,15 @@ pub mod account {
 
     pub fn get_all() {
         eprintln!("account::get_all");
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    // use super::*;
+
+    #[test]
+    fn it_can_return_an_account() {
     }
 }
