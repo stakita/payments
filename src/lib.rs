@@ -7,6 +7,8 @@ use anyhow::Result;
 #[macro_use]
 extern crate anyhow;
 
+pub mod repositories;
+
 mod services;
 use crate::services::{TransactionService, TransactionServiceTrait};
 
