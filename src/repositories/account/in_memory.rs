@@ -1,18 +1,25 @@
 
 use std::collections::BTreeMap;
+
 use crate::repositories::account::{
     Account,
     AccountRepositoryTrait
 };
 
 pub struct AccountRepositoryInMemory {
-    pub store: BTreeMap<u16, Account>,
+    pub store: Box<BTreeMap<u16, Account>>,
 }
 
 impl AccountRepositoryInMemory {
     pub fn new() -> AccountRepositoryInMemory {
         AccountRepositoryInMemory {
-            store: BTreeMap::new(),
+            store: Box::new(BTreeMap::new()),
+        }
+    }
+
+    pub fn print(&self) {
+        for (key, value) in self.store.iter() {
+            println!("key: {}, value: {:?}", key, value);
         }
     }
 }
@@ -23,8 +30,16 @@ impl AccountRepositoryTrait for AccountRepositoryInMemory {
             let _ = &self.store.insert(account.client_id, account);
         }
 
+        fn update(&mut self, client_id: u16, account: Account) {
+            self.store.entry(client_id).or_insert(account);
+        }
+
         fn find(&mut self, client_id: u16) -> Option<&Account> {
             self.store.get(&client_id)
+        }
+
+        fn find_or_create(&mut self, client_id: u16) -> &Account {
+            self.store.entry(client_id).or_insert(Account::build_default_account(client_id))
         }
 
         fn find_all(&mut self) -> Vec<&Account> {
@@ -113,4 +128,19 @@ mod tests {
         assert_eq!(res[2], &b);
     }
 
+    #[test]
+    fn it_can_create_a_new_account() {
+        let mut ar = AccountRepositoryInMemory::new();
+        let expected = Account {
+            client_id: 42,
+            available: 0.0,
+            held: 0.0,
+            total: 0.0,
+            locked: false,
+        };
+
+        let account = ar.find_or_create(42);
+
+        assert_eq!(account, &expected);
+    }
 }
