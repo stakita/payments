@@ -215,15 +215,7 @@ mod tests {
             Ok(())
         }
 
-        fn get_account(&self, client_id: u16) -> Account {
-            Account {
-                client_id: client_id,
-                available: 1.0,
-                held: 0.0,
-                total: 1.0,
-                locked: true,
-            }
-        }
+        // fn get_account(&self, client_id: u16) -> Option<&Account> {}
 
     }
 
