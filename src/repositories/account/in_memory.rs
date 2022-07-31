@@ -39,7 +39,7 @@ impl AccountRepositoryTrait for AccountRepositoryInMemory {
         }
 
         fn find_or_create(&mut self, client_id: u16) -> &Account {
-            self.store.entry(client_id).or_insert(Account::build_default_account(client_id))
+            self.store.entry(client_id).or_insert_with(|| Account::build_default_account(client_id))
         }
 
         fn find_all(&mut self) -> Vec<&Account> {
