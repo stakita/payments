@@ -1,6 +1,10 @@
 
 use anyhow::Result;
 
+use crate::repositories::account::{
+    // Account,
+    AccountRepositoryTrait,
+};
 use crate::repositories::transaction::{
     Transaction,
     TransactionType,
@@ -17,19 +21,24 @@ pub trait PaymentServiceTrait {
     fn dispute(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
     fn resolve(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
     fn chargeback(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
-    fn get_account(&self, client_id: u16) -> Option<&Account> {
+    fn get_account(&mut self, client_id: u16) -> Option<&Account> {
         None
+    }
+    fn get_accounts(&mut self) -> Vec<&Account> {
+        Vec::new()
     }
 }
 
 pub struct PaymentService {
-    tx_store: Box<dyn TransactionRepositoryTrait>
+    tx_store: Box<dyn TransactionRepositoryTrait>,
+    ac_store: Box<dyn AccountRepositoryTrait>,
 }
 
 impl PaymentService {
-    pub fn new(tx_store: Box<dyn TransactionRepositoryTrait>) -> PaymentService {
+    pub fn new(tx_store: Box<dyn TransactionRepositoryTrait>, ac_store: Box<dyn AccountRepositoryTrait>) -> PaymentService {
         PaymentService {
             tx_store,
+            ac_store,
         }
     }
 }
@@ -39,13 +48,34 @@ impl PaymentServiceTrait for PaymentService {
 
     fn deposit(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
         eprintln!("deposit");
+
+        // Check if account exists
+            // If account locked: skip transaction
+            // else continue
+        // else
+            // create
+        // get account, creating it if needed
+        let acc = self.ac_store.find_or_create(client_id);
+
+        // store the transaction
         self.tx_store.insert(Transaction{
-            tx_id: tx_id,
+            tx_id,
             tx_type: Transaction::transaction_type_encode(TransactionType::Deposit),
-            client_id: client_id,
-            amount: amount,
+            client_id,
+            amount,
             state: Transaction::transaction_state_encode(TransactionState::Normal),
         });
+
+        // update account
+        let acc = Account {
+            client_id,
+            available: acc.available + amount,
+            held: acc.held,
+            total: acc.total + amount,
+            locked: false,
+        };
+        let _ = self.ac_store.update(client_id, acc);
+
         Ok(())
     }
 
@@ -76,11 +106,13 @@ impl PaymentServiceTrait for PaymentService {
         Ok(())
     }
 
-    // fn get_account(&self, client_id: u16) -> Option<&Account> {
-    // }
+    fn get_account(&mut self, client_id: u16) -> Option<&Account> {
+        self.ac_store.find(client_id)
+    }
 
-    // fn get_accounts(self) -> Vec<Account> {
-    // }
+    fn get_accounts(&mut self) -> Vec<&Account> {
+        self.ac_store.find_all()
+    }
 }
 
 
@@ -88,19 +120,35 @@ impl PaymentServiceTrait for PaymentService {
 mod tests {
     use super::*;
     use crate::repositories::transaction::in_memory::TransactionRepositoryInMemory;
+    use crate::repositories::account::in_memory::AccountRepositoryInMemory;
 
     #[test]
-    fn it_can_return_an_account() {
-        let transaction_repository = TransactionRepositoryInMemory::new();
-        let mut payment_service: Box<dyn PaymentServiceTrait> = Box::new(PaymentService::new(Box::new(transaction_repository)));
-        payment_service.deposit(42, 4242, 42.42);
-        let acc = payment_service.get_account(42).unwrap();
-        assert_eq!(acc, &Account {
-            client_id: 42,
+    fn deposit_creates_in_a_new_account() {
+        let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
+        let account_repository = Box::new(AccountRepositoryInMemory::new());
+        let mut ps = PaymentService::new(transaction_repository, account_repository);
+        let client_id = 42;
+        let expected = Account {
+            client_id: client_id,
             available: 42.42,
             held: 0.0,
             total: 42.42,
             locked: false,
-        });
+        };
+
+        let _ = ps.deposit(client_id, 1, 42.42);
+        let acc = ps.get_account(client_id).unwrap();
+        assert_eq!(acc, &expected);
+
+        let expected2 = Account {
+            available: 52.53,
+            total: 52.53,
+            ..expected
+        };
+
+        let _ = ps.deposit(client_id, 1, 10.11);
+        let acc = ps.get_account(client_id).unwrap();
+        assert_eq!(acc, &expected2);
+
     }
 }

@@ -13,7 +13,7 @@ pub mod core;
 mod services;
 use crate::services::payment::{PaymentService, PaymentServiceTrait};
 use crate::repositories::transaction::in_memory::TransactionRepositoryInMemory;
-// use crate::repositories::account::in_memory::AccountRepositoryInMemory;
+use crate::repositories::account::in_memory::AccountRepositoryInMemory;
 
 pub struct Config {
     pub filename: String,
@@ -55,10 +55,9 @@ fn transaction_line_iter(filename: &str) -> Result<Reader<File>> {
 
 fn process_lines(mut reader: Reader<File>) -> Result<()> {
     // Instantiate here to inject the service into the application functions, specifically process_transaction()
-    let transaction_repository = TransactionRepositoryInMemory::new();
-    let mut payment_service: Box<dyn PaymentServiceTrait> = Box::new(PaymentService::new(Box::new(transaction_repository)));
-    // let account_repository = AccountRepositoryInMemory::new();
-    // let mut account_service: Box<dyn AccountServiceTrait> = Box::new(AccountService::new(Box::new(account_repository)));
+    let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
+    let account_repository = Box::new(AccountRepositoryInMemory::new());
+    let mut payment_service: Box<dyn PaymentServiceTrait> = Box::new(PaymentService::new(transaction_repository, account_repository));
 
     let line_offset = 2;
     for (i, line_result) in reader.deserialize::<TransactionLine>().enumerate() {
@@ -73,6 +72,10 @@ fn process_lines(mut reader: Reader<File>) -> Result<()> {
         process_transaction(&transaction, &mut payment_service).map_err(|error| {
             anyhow!("Error processing input line {}: {}", i + line_offset, error)
         })?;
+    }
+
+    for account in payment_service.get_accounts() {
+        println!("account: {:?}", account);
     }
     Ok(())
 }

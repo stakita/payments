@@ -17,7 +17,7 @@ impl Account {
 }
 
 pub trait AccountRepositoryTrait {
-    fn insert(&mut self, account: Account);
+    // fn insert(&mut self, account: Account);
     fn update(&mut self, client_id: u16, account: Account);
     fn find(&mut self, client_id: u16) -> Option<&Account>;
     fn find_or_create(&mut self, client_id: u16) -> &Account;

@@ -26,12 +26,12 @@ impl AccountRepositoryInMemory {
 
 impl AccountRepositoryTrait for AccountRepositoryInMemory {
 
-        fn insert(&mut self, account: Account) {
-            let _ = &self.store.insert(account.client_id, account);
-        }
+        // fn insert(&mut self, account: Account) {
+        //     let _ = &self.store.insert(account.client_id, account);
+        // }
 
         fn update(&mut self, client_id: u16, account: Account) {
-            self.store.entry(client_id).or_insert(account);
+            self.store.insert(client_id, account);
         }
 
         fn find(&mut self, client_id: u16) -> Option<&Account> {
@@ -74,8 +74,8 @@ mod tests {
             locked: false,
         };
 
-        AccountRepositoryTrait::insert(&mut ar, a.clone());
-        AccountRepositoryTrait::insert(&mut ar, b.clone());
+        AccountRepositoryTrait::update(&mut ar, a.client_id, a.clone());
+        AccountRepositoryTrait::update(&mut ar, b.client_id, b.clone());
 
         // it finds an inserted key
         let res = AccountRepositoryTrait::find(&mut ar, a.client_id).unwrap();
@@ -116,9 +116,9 @@ mod tests {
             locked: true,
         };
 
-        AccountRepositoryTrait::insert(&mut ar, a.clone());
-        AccountRepositoryTrait::insert(&mut ar, b.clone());
-        AccountRepositoryTrait::insert(&mut ar, c.clone());
+        AccountRepositoryTrait::update(&mut ar, a.client_id, a.clone());
+        AccountRepositoryTrait::update(&mut ar, b.client_id, b.clone());
+        AccountRepositoryTrait::update(&mut ar, c.client_id, c.clone());
 
         let res = AccountRepositoryTrait::find_all(&mut ar);
         println!("res: {:?}", res);
@@ -140,6 +140,38 @@ mod tests {
         };
 
         let account = ar.find_or_create(42);
+
+        assert_eq!(account, &expected);
+    }
+
+    #[test]
+    fn it_can_update_an_existing_account() {
+        let mut ar = AccountRepositoryInMemory::new();
+
+        let initial = Account {
+            client_id: 42,
+            available: 42.42,
+            held: 0.0,
+            total: 42.42,
+            locked: false,
+        };
+
+        let update = Account {
+            client_id: 42,
+            available: 20.23,
+            held: 3.0,
+            total: 23.23,
+            locked: false,
+        };
+
+        let expected = update.clone();
+
+        ar.update(42, initial);
+        ar.update(42, update);
+
+        let account = ar.find_or_create(42);
+
+
 
         assert_eq!(account, &expected);
     }
