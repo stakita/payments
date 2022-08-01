@@ -73,18 +73,6 @@ mod tests {
 
     #[test]
     fn can_create_u16_account_db() {
-        // impl DefaultRecord<u16, Account> for Account {
-        //     fn default(key: u16) -> Account {
-        //         Account {
-        //             client_id: key,
-        //             available: 0.0,
-        //             held: 0.0,
-        //             total: 0.0,
-        //             locked: false,
-        //         }
-        //     }
-        // }
-
         let mut db = InMemoryDatabase::<u16, Account>::new();
 
         let a1 = Account {
@@ -129,14 +117,6 @@ mod tests {
 
     #[test]
     fn can_create_u32_transaction_db() {
-
-        impl DefaultRecord<u32, Transaction> for Transaction {
-            fn default(_key: u32) -> Transaction {
-                panic!("Building default transaction doesn't make sense")
-                // Transaction { tx_id: key, tx_type: 0, client_id: 0, amount: 0.0, state: 0 }
-            }
-        }
-
         let mut db = InMemoryDatabase::<u32, Transaction>::new();
 
         let t1 = Transaction { tx_id: 1111111, tx_type: 0, client_id: 11, amount: 11.11, state: 0 };

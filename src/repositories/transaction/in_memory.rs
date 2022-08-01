@@ -1,55 +1,32 @@
 
-use std::collections::BTreeMap;
-use crate::repositories::transaction::{
-    Transaction,
-    TransactionRepositoryTrait
+
+use crate::repositories::in_memory::{
+    InMemoryDatabase,
+    DefaultRecord,
 };
+pub use crate::core::entities::transaction::Transaction;
 
-pub struct TransactionRepositoryInMemory {
-    pub store: BTreeMap<u32, Transaction>,
-}
-
-impl TransactionRepositoryInMemory {
-    pub fn new() -> TransactionRepositoryInMemory {
-        TransactionRepositoryInMemory {
-            store: BTreeMap::new(),
-        }
-    }
-
-    pub fn print(&self) {
-        for (key, value) in &self.store {
-            println!("key: {}, value: {:?}", key, value);
-        }
+impl DefaultRecord<u32, Transaction> for Transaction {
+    fn default(_key: u32) -> Transaction {
+        panic!("Building default transaction doesn't make sense")
+        // Transaction { tx_id: key, tx_type: 0, client_id: 0, amount: 0.0, state: 0 }
     }
 }
 
-impl TransactionRepositoryTrait for TransactionRepositoryInMemory {
-        fn insert(&mut self, transaction: Transaction) {
-            let _ = &self.store.insert(transaction.tx_id, transaction);
-            self.print();
-        }
-
-        fn find(&mut self, tx_id: u32) -> Option<&Transaction> {
-            self.store.get(&tx_id)
-        }
-
-        fn find_all(&mut self) -> Vec<&Transaction> {
-            let mut elements = Vec::<&Transaction>::new();
-            for key in self.store.keys() {
-                elements.push(self.store.get(key).unwrap());
-            }
-            elements
-        }
+pub fn build_transaction_repository_in_memory() -> InMemoryDatabase<u32, Transaction> {
+    InMemoryDatabase::<u32, Transaction>::new()
 }
 
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::repositories::in_memory::InMemoryDatabaseTrait;
 
     #[test]
     fn it_can_insert_and_find() {
-        let mut tr = TransactionRepositoryInMemory::new();
+        let mut tr = build_transaction_repository_in_memory();
+
         let a = Transaction {
             tx_id: 1600002,
             tx_type: 1,
@@ -65,26 +42,29 @@ mod tests {
             state: 1,
         };
 
-        TransactionRepositoryTrait::insert(&mut tr, a.clone());
-        TransactionRepositoryTrait::insert(&mut tr, b.clone());
+        tr.update(a.tx_id, a.clone());
+        tr.update(b.tx_id, b.clone());
 
         // it finds an inserted key
-        let res = TransactionRepositoryTrait::find(&mut tr, a.tx_id).unwrap();
+        let res = tr.find(a.tx_id).unwrap();
         assert_eq!(res, &a);
 
         // it finds an inserted key
-        let res = TransactionRepositoryTrait::find(&mut tr, b.tx_id).unwrap();
+        let res = tr.find(b.tx_id).unwrap();
         assert_eq!(res, &b);
 
         // it fails to find an invalid key
-        let res = TransactionRepositoryTrait::find(&mut tr, 68);
+        let res = tr.find(68);
         assert_eq!(res, None);
 
+        let res = tr.find_all();
+        assert_eq!(res.len(), 2);
     }
 
     #[test]
     fn it_can_insert_and_find_all_sorted() {
-        let mut tr = TransactionRepositoryInMemory::new();
+        let mut tr = build_transaction_repository_in_memory();
+
         let a = Transaction {
             tx_id: 1600042,
             tx_type: 1,
@@ -107,13 +87,14 @@ mod tests {
             state: 2,
         };
 
-        TransactionRepositoryTrait::insert(&mut tr, a.clone());
-        TransactionRepositoryTrait::insert(&mut tr, b.clone());
-        TransactionRepositoryTrait::insert(&mut tr, c.clone());
+        tr.update(a.tx_id, a.clone());
+        tr.update(b.tx_id, b.clone());
+        tr.update(c.tx_id, c.clone());
 
-        let res = TransactionRepositoryTrait::find_all(&mut tr);
-
+        let res = tr.find_all();
         println!("res: {:?}", res);
+
+        assert_eq!(res.len(), 3);
 
         assert_eq!(res[0], &c);
         assert_eq!(res[1], &a);

@@ -13,7 +13,7 @@ pub mod core;
 
 pub mod services;
 use crate::services::payment::{PaymentService, PaymentServiceTrait};
-use crate::repositories::transaction::in_memory::TransactionRepositoryInMemory;
+use crate::repositories::transaction::in_memory::build_transaction_repository_in_memory;
 
 pub struct Config {
     pub filename: String,
@@ -55,7 +55,7 @@ fn transaction_line_iter(filename: &str) -> Result<Reader<File>> {
 
 fn process_lines(mut reader: Reader<File>) -> Result<()> {
     // Instantiate here to inject the service into the application functions, specifically process_transaction()
-    let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
+    let transaction_repository = Box::new(build_transaction_repository_in_memory());
     let account_repository = Box::new(build_account_repository_in_memory());
 
     let mut payment_service: Box<dyn PaymentServiceTrait> = Box::new(PaymentService::new(transaction_repository, account_repository));

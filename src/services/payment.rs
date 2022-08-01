@@ -27,12 +27,12 @@ pub trait PaymentServiceTrait {
 }
 
 pub struct PaymentService {
-    tx_store: Box<dyn TransactionRepositoryTrait>,
+    tx_store: Box<dyn InMemoryDatabaseTrait<u32, Transaction>>,
     ac_store: Box<dyn InMemoryDatabaseTrait<u16, Account>>,
 }
 
 impl PaymentService {
-    pub fn new(tx_store: Box<dyn TransactionRepositoryTrait>, ac_store: Box<dyn InMemoryDatabaseTrait<u16, Account>>) -> PaymentService {
+    pub fn new(tx_store: Box<dyn InMemoryDatabaseTrait<u32, Transaction>>, ac_store: Box<dyn InMemoryDatabaseTrait<u16, Account>>) -> PaymentService {
         PaymentService {
             tx_store,
             ac_store,
@@ -55,7 +55,7 @@ impl PaymentServiceTrait for PaymentService {
         let acc = self.ac_store.find_or_create(client_id);
 
         // store the transaction
-        self.tx_store.insert(Transaction{
+        self.tx_store.update(tx_id, Transaction{
             tx_id,
             tx_type: Transaction::transaction_type_encode(TransactionType::Deposit),
             client_id,
@@ -78,7 +78,7 @@ impl PaymentServiceTrait for PaymentService {
 
     fn withdrawal(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
         eprintln!("withdrawal");
-        self.tx_store.insert(Transaction{
+        self.tx_store.update(tx_id, Transaction{
             tx_id: tx_id,
             tx_type: Transaction::transaction_type_encode(TransactionType::Withdrawal),
             client_id: client_id,
@@ -116,12 +116,12 @@ impl PaymentServiceTrait for PaymentService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::repositories::transaction::in_memory::TransactionRepositoryInMemory;
+    use crate::repositories::transaction::in_memory::build_transaction_repository_in_memory;
     use crate::repositories::account::in_memory::build_account_repository_in_memory;
 
     #[test]
     fn deposit_creates_in_a_new_account() {
-        let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
+        let transaction_repository = Box::new(build_transaction_repository_in_memory());
         let account_repository = Box::new(build_account_repository_in_memory());
         let mut ps = PaymentService::new(transaction_repository, account_repository);
         let client_id = 42;
