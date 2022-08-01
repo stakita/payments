@@ -58,6 +58,7 @@ mod tests {
         assert_eq!(res, None);
 
         let res = tr.find_all();
+        println!("res: {:?}", res);
         assert_eq!(res.len(), 2);
     }
 
@@ -93,7 +94,6 @@ mod tests {
 
         let res = tr.find_all();
         println!("res: {:?}", res);
-
         assert_eq!(res.len(), 3);
 
         assert_eq!(res[0], &c);

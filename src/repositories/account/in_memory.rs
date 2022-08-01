@@ -144,8 +144,6 @@ mod tests {
 
         let account = ar.find_or_create(42);
 
-
-
         assert_eq!(account, &expected);
     }
 }

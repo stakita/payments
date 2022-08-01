@@ -107,12 +107,9 @@ mod tests {
             locked: false,
         });
 
-        assert_eq!(db.find_all().len(), 3);
-
-        // for a in db.find_all() {
-        //     println!("{:?}", a);
-        // }
-
+        let res = db.find_all();
+        println!("res: {:?}", res);
+        assert_eq!(res.len(), 3);
     }
 
     #[test]
@@ -130,11 +127,9 @@ mod tests {
         assert_eq!(db.find(1111111).unwrap(), &t1);
         assert_eq!(db.find(2222222).unwrap(), &t2);
 
-        assert_eq!(db.find_all().len(), 2);
-
-        // for a in db.find_all() {
-        //     println!("{:?}", a);
-        // }
+        let res = db.find_all();
+        println!("res: {:?}", res);
+        assert_eq!(res.len(), 2);
     }
 
 }
