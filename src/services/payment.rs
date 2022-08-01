@@ -18,10 +18,10 @@ pub trait PaymentServiceTrait {
     fn dispute(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
     fn resolve(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
     fn chargeback(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
-    fn get_account(&mut self, client_id: u16) -> Option<&Account> {
+    fn get_account<'a>(&'a mut self, client_id: u16) -> Option<&'a Account> {
         None
     }
-    fn get_accounts(&mut self) -> Vec<&Account> {
+    fn get_accounts<'a>(&'a mut self) -> Vec<&'a Account> {
         Vec::new()
     }
 }
@@ -103,11 +103,11 @@ impl PaymentServiceTrait for PaymentService {
         Ok(())
     }
 
-    fn get_account(&mut self, client_id: u16) -> Option<&Account> {
+    fn get_account<'a>(&'a mut self, client_id: u16) -> Option<&'a Account> {
         self.ac_store.find(client_id)
     }
 
-    fn get_accounts(&mut self) -> Vec<&Account> {
+    fn get_accounts<'a>(&'a mut self) -> Vec<&'a Account> {
         self.ac_store.find_all()
     }
 }

@@ -4,9 +4,9 @@ use crate::fmt::Debug;
 
 pub trait InMemoryDatabaseTrait<K, T> {
     fn update(&mut self, id: K, record: T);
-    fn find(&mut self, id: K) -> Option<&T>;
-    fn find_or_create(&mut self, id: K) -> &T;
-    fn find_all(&mut self) -> Vec<&T>;
+    fn find<'a>(&'a mut self, id: K) -> Option<&'a T>;
+    fn find_or_create<'a>(&'a mut self, id: K) -> &'a T;
+    fn find_all<'a>(&'a mut self) -> Vec<&'a T>;
 }
 
 pub struct InMemoryDatabase<K, T> {
@@ -46,15 +46,15 @@ where
         self.store.insert(client_id, account);
     }
 
-    fn find(&mut self, client_id: K) -> Option<&T> {
+    fn find<'a>(&'a mut self, client_id: K) -> Option<&'a T> {
         self.store.get(&client_id)
     }
 
-    fn find_or_create(&mut self, client_id: K) -> &T {
+    fn find_or_create<'a>(&'a mut self, client_id: K) -> &'a T {
         self.store.entry(client_id).or_insert(T::default(client_id))
     }
 
-    fn find_all(&mut self) -> Vec<&T> {
+    fn find_all<'a>(&'a mut self) -> Vec<&'a T> {
         let mut elements = Vec::<&T>::new();
         for key in self.store.keys() {
             elements.push(self.store.get(key).unwrap());
