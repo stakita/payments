@@ -113,88 +113,90 @@ mod tests {
 
     }
 
-    // #[test]
-    // fn it_can_insert_and_find_all_sorted() {
-    //     let mut ar = AccountRepositoryInMemory::new();
-    //     let a = Account {
-    //         client_id: 42,
-    //         available: 1.23,
-    //         held: 0.0,
-    //         total: 1.23,
-    //         locked: false,
-    //     };
-    //     let b = Account {
-    //         client_id: 420,
-    //         available: 10.23,
-    //         held: 0.0,
-    //         total: 10.23,
-    //         locked: true,
-    //     };
-    //     let c = Account {
-    //         client_id: 1,
-    //         available: 1.11,
-    //         held: 1.22,
-    //         total: 1.33,
-    //         locked: true,
-    //     };
+    #[test]
+    fn it_can_insert_and_find_all_sorted() {
+        let mut ar = build_account_repository_in_memory();
 
-    //     AccountRepositoryTrait::update(&mut ar, a.client_id, a.clone());
-    //     AccountRepositoryTrait::update(&mut ar, b.client_id, b.clone());
-    //     AccountRepositoryTrait::update(&mut ar, c.client_id, c.clone());
+        let a = Account {
+            client_id: 42,
+            available: 1.23,
+            held: 0.0,
+            total: 1.23,
+            locked: false,
+        };
+        let b = Account {
+            client_id: 420,
+            available: 10.23,
+            held: 0.0,
+            total: 10.23,
+            locked: true,
+        };
+        let c = Account {
+            client_id: 1,
+            available: 1.11,
+            held: 1.22,
+            total: 1.33,
+            locked: true,
+        };
 
-    //     let res = AccountRepositoryTrait::find_all(&mut ar);
-    //     println!("res: {:?}", res);
+        ar.update(a.client_id, a.clone());
+        ar.update(b.client_id, b.clone());
+        ar.update(c.client_id, c.clone());
 
-    //     assert_eq!(res[0], &c);
-    //     assert_eq!(res[1], &a);
-    //     assert_eq!(res[2], &b);
-    // }
+        let res = ar.find_all();
+        println!("res: {:?}", res);
 
-    // #[test]
-    // fn it_can_create_a_new_account() {
-    //     let mut ar = AccountRepositoryInMemory::new();
-    //     let expected = Account {
-    //         client_id: 42,
-    //         available: 0.0,
-    //         held: 0.0,
-    //         total: 0.0,
-    //         locked: false,
-    //     };
+        assert_eq!(res[0], &c);
+        assert_eq!(res[1], &a);
+        assert_eq!(res[2], &b);
+    }
 
-    //     let account = ar.find_or_create(42);
+    #[test]
+    fn it_can_create_a_new_account() {
+        let mut ar = build_account_repository_in_memory();
 
-    //     assert_eq!(account, &expected);
-    // }
+        let expected = Account {
+            client_id: 42,
+            available: 0.0,
+            held: 0.0,
+            total: 0.0,
+            locked: false,
+        };
 
-    // #[test]
-    // fn it_can_update_an_existing_account() {
-    //     let mut ar = AccountRepositoryInMemory::new();
+        let account = ar.find_or_create(42);
 
-    //     let initial = Account {
-    //         client_id: 42,
-    //         available: 42.42,
-    //         held: 0.0,
-    //         total: 42.42,
-    //         locked: false,
-    //     };
+        assert_eq!(account, &expected);
+    }
 
-    //     let update = Account {
-    //         client_id: 42,
-    //         available: 20.23,
-    //         held: 3.0,
-    //         total: 23.23,
-    //         locked: false,
-    //     };
+    #[test]
+    fn it_can_update_an_existing_account() {
+        let mut ar = build_account_repository_in_memory();
 
-    //     let expected = update.clone();
+        let initial = Account {
+            client_id: 42,
+            available: 42.42,
+            held: 0.0,
+            total: 42.42,
+            locked: false,
+        };
 
-    //     ar.update(42, initial);
-    //     ar.update(42, update);
+        let update = Account {
+            client_id: 42,
+            available: 20.23,
+            held: 3.0,
+            total: 23.23,
+            locked: false,
+        };
 
-    //     let account = ar.find_or_create(42);
+        let expected = update.clone();
+
+        ar.update(42, initial);
+        ar.update(42, update);
+
+        let account = ar.find_or_create(42);
 
 
 
-    //     assert_eq!(account, &expected);
-    // }
+        assert_eq!(account, &expected);
+    }
 }
