@@ -6,7 +6,6 @@ use crate::repositories::transaction::{
     Transaction,
     TransactionType,
     TransactionState,
-    TransactionRepositoryTrait,
 };
 
 use crate::core::entities::account::Account;
