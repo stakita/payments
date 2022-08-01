@@ -79,10 +79,8 @@ mod tests {
 
     #[test]
     fn it_can_insert_and_find() {
-        // let mut ar = InMemoryDatabase::<u16, Account>::new();
+        let mut ar = build_account_repository_in_memory();
 
-
-        let mut ar = AccountRepositoryInMemory::new();
         let a = Account {
             client_id: 42,
             available: 1.23,
@@ -98,8 +96,6 @@ mod tests {
             locked: false,
         };
 
-        // AccountRepositoryTrait::update(&mut ar, a.client_id, a.clone());
-        // AccountRepositoryTrait::update(&mut ar, b.client_id, b.clone());
         ar.update(a.client_id, a.clone());
         ar.update(b.client_id, b.clone());
 
