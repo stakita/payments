@@ -54,29 +54,29 @@ fn transaction_line_iter(filename: &str) -> Result<Reader<File>> {
 }
 
 fn process_lines(mut reader: Reader<File>) -> Result<()> {
-    // Instantiate here to inject the service into the application functions, specifically process_transaction()
-    let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
-    let account_repository = Box::new(AccountRepositoryInMemory::new());
-    let mut payment_service: Box<dyn PaymentServiceTrait> = Box::new(PaymentService::new(transaction_repository, account_repository));
+    // // Instantiate here to inject the service into the application functions, specifically process_transaction()
+    // let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
+    // let account_repository = Box::new(AccountRepositoryInMemory::new());
+    // let mut payment_service: Box<dyn PaymentServiceTrait> = Box::new(PaymentService::new(transaction_repository, account_repository));
 
-    let line_offset = 2;
-    for (i, line_result) in reader.deserialize::<TransactionLine>().enumerate() {
-        // TODO: remove
-        eprintln!("i: {}", i);
-        let transaction = line_result.unwrap();
+    // let line_offset = 2;
+    // for (i, line_result) in reader.deserialize::<TransactionLine>().enumerate() {
+    //     // TODO: remove
+    //     eprintln!("i: {}", i);
+    //     let transaction = line_result.unwrap();
 
-        transaction.validate().map_err(|error| {
-            anyhow!("Error processing input line {}: {}", i + line_offset, error)
-        })?;
+    //     transaction.validate().map_err(|error| {
+    //         anyhow!("Error processing input line {}: {}", i + line_offset, error)
+    //     })?;
 
-        process_transaction(&transaction, &mut payment_service).map_err(|error| {
-            anyhow!("Error processing input line {}: {}", i + line_offset, error)
-        })?;
-    }
+    //     process_transaction(&transaction, &mut payment_service).map_err(|error| {
+    //         anyhow!("Error processing input line {}: {}", i + line_offset, error)
+    //     })?;
+    // }
 
-    for account in payment_service.get_accounts() {
-        println!("account: {:?}", account);
-    }
+    // for account in payment_service.get_accounts() {
+    //     println!("account: {:?}", account);
+    // }
     Ok(())
 }
 
@@ -181,58 +181,58 @@ impl<'a> TransactionLine {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::core::entities::account::Account;
+    // use super::*;
+    // use crate::core::entities::account::Account;
 
-    struct MockPaymentService {}
+    // struct MockPaymentService {}
 
-    impl MockPaymentService {
-        fn new() -> MockPaymentService {
-            MockPaymentService {}
-        }
-    }
+    // impl MockPaymentService {
+    //     fn new() -> MockPaymentService {
+    //         MockPaymentService {}
+    //     }
+    // }
 
-    impl PaymentServiceTrait for MockPaymentService {
-        fn deposit(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
-            eprintln!("x deposit");
-            Ok(())
-        }
+    // impl PaymentServiceTrait for MockPaymentService {
+    //     fn deposit(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
+    //         eprintln!("x deposit");
+    //         Ok(())
+    //     }
 
-        fn withdrawal(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
-            eprintln!("x withdrawal");
-            Ok(())
-        }
+    //     fn withdrawal(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
+    //         eprintln!("x withdrawal");
+    //         Ok(())
+    //     }
 
-        fn dispute(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
-            eprintln!("x dispute");
-            Ok(())
-        }
+    //     fn dispute(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
+    //         eprintln!("x dispute");
+    //         Ok(())
+    //     }
 
-        fn resolve(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
-            eprintln!("x resolve");
-            Ok(())
-        }
+    //     fn resolve(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
+    //         eprintln!("x resolve");
+    //         Ok(())
+    //     }
 
-        fn chargeback(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
-            eprintln!("x chargeback");
-            Ok(())
-        }
+    //     fn chargeback(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
+    //         eprintln!("x chargeback");
+    //         Ok(())
+    //     }
 
-        // fn get_account(&self, client_id: u16) -> Option<&Account> {}
+    //     // fn get_account(&self, client_id: u16) -> Option<&Account> {}
 
-    }
+    // }
 
-    #[test]
-    fn test_calls_deposit() {
-        let tx_line = TransactionLine {
-            tx_type: TransactionType::Deposit,
-            client_id: 1,
-            tx_id: 1,
-            amount: Some(1.0),
-        };
+    // #[test]
+    // fn test_calls_deposit() {
+    //     let tx_line = TransactionLine {
+    //         tx_type: TransactionType::Deposit,
+    //         client_id: 1,
+    //         tx_id: 1,
+    //         amount: Some(1.0),
+    //     };
 
-        let mut payment_service: Box<dyn PaymentServiceTrait> = Box::new(MockPaymentService::new());
+    //     let mut payment_service: Box<dyn PaymentServiceTrait> = Box::new(MockPaymentService::new());
 
-        let res = process_transaction(&tx_line, &mut payment_service);
-    }
+    //     let res = process_transaction(&tx_line, &mut payment_service);
+    // }
 }

@@ -1,5 +1,5 @@
 
-use std::{collections::{BTreeMap, btree_map::Entry::Occupied}};
+use std::collections::BTreeMap;
 use crate::fmt::Debug;
 
 pub trait InMemoryDatabaseTrait<K, T> {
@@ -72,42 +72,19 @@ mod tests {
     pub use crate::core::entities::transaction::Transaction;
 
     #[test]
-    fn default_build() {
-
-        impl DefaultRecord<u16, Account> for Account {
-            fn default(key: u16) -> Account {
-                Account {
-                    client_id: 42,
-                    available: 42.42,
-                    held: 0.0,
-                    total: 42.42,
-                    locked: false,
-                }
-            }
-        }
-
-        let mut db = InMemoryDatabase::<u16, Account>::new();
-
-        let a1 = Account {
-            client_id: 42,
-            available: 42.42,
-            held: 0.0,
-            total: 42.42,
-            locked: false,
-        };
-
-        db.update(42, a1);
-
-        db.find_or_create(55);
-
-        for a in db.find_all() {
-            println!("{:?}", a);
-        }
-
-    }
-
-    #[test]
     fn can_create_u16_account_db() {
+        // impl DefaultRecord<u16, Account> for Account {
+        //     fn default(key: u16) -> Account {
+        //         Account {
+        //             client_id: key,
+        //             available: 0.0,
+        //             held: 0.0,
+        //             total: 0.0,
+        //             locked: false,
+        //         }
+        //     }
+        // }
+
         let mut db = InMemoryDatabase::<u16, Account>::new();
 
         let a1 = Account {
@@ -118,7 +95,7 @@ mod tests {
             locked: false,
         };
 
-        db.update(42, a1);
+        db.update(42, a1.clone());
 
         let a2 = Account {
             client_id: 52,
@@ -128,20 +105,35 @@ mod tests {
             locked: false,
         };
 
-        db.update(52, a2);
+        db.update(52, a2.clone());
 
-        for a in db.find_all() {
-            println!("{:?}", a);
-        }
+        db.find_or_create(55);
+
+        assert_eq!(db.find(42).unwrap(), &a1);
+        assert_eq!(db.find(52).unwrap(), &a2);
+        assert_eq!(db.find(55).unwrap(), &Account {
+            client_id: 55,
+            available: 0.0,
+            held: 0.0,
+            total: 0.0,
+            locked: false,
+        });
+
+        assert_eq!(db.find_all().len(), 3);
+
+        // for a in db.find_all() {
+        //     println!("{:?}", a);
+        // }
+
     }
 
     #[test]
     fn can_create_u32_transaction_db() {
 
         impl DefaultRecord<u32, Transaction> for Transaction {
-            fn default(key: u32) -> Transaction {
-                // panic!("Building default transaction doesn't make sense")
-                Transaction { tx_id: key, tx_type: 0, client_id: 0, amount: 0.0, state: 0 }
+            fn default(_key: u32) -> Transaction {
+                panic!("Building default transaction doesn't make sense")
+                // Transaction { tx_id: key, tx_type: 0, client_id: 0, amount: 0.0, state: 0 }
             }
         }
 
@@ -149,15 +141,20 @@ mod tests {
 
         let t1 = Transaction { tx_id: 1111111, tx_type: 0, client_id: 11, amount: 11.11, state: 0 };
 
-        db.update(11, t1);
+        db.update(1111111, t1.clone());
 
         let t2 = Transaction { tx_id: 2222222, tx_type: 0, client_id: 22, amount: 22.22, state: 0 };
 
-        db.update(22, t2);
+        db.update(2222222, t2.clone());
 
-        for a in db.find_all() {
-            println!("{:?}", a);
-        }
+        assert_eq!(db.find(1111111).unwrap(), &t1);
+        assert_eq!(db.find(2222222).unwrap(), &t2);
+
+        assert_eq!(db.find_all().len(), 2);
+
+        // for a in db.find_all() {
+        //     println!("{:?}", a);
+        // }
     }
 
 }

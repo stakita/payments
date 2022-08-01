@@ -5,6 +5,8 @@ use crate::repositories::account::{
     // Account,
     AccountRepositoryTrait,
 };
+
+use crate::repositories::in_memory::InMemoryDatabaseTrait;
 use crate::repositories::transaction::{
     Transaction,
     TransactionType,
@@ -31,11 +33,11 @@ pub trait PaymentServiceTrait {
 
 pub struct PaymentService {
     tx_store: Box<dyn TransactionRepositoryTrait>,
-    ac_store: Box<dyn AccountRepositoryTrait>,
+    ac_store: Box<dyn InMemoryDatabaseTrait<u16, Account>>,
 }
 
 impl PaymentService {
-    pub fn new(tx_store: Box<dyn TransactionRepositoryTrait>, ac_store: Box<dyn AccountRepositoryTrait>) -> PaymentService {
+    pub fn new(tx_store: Box<dyn TransactionRepositoryTrait>, ac_store: Box<dyn InMemoryDatabaseTrait<u16, Account>>) -> PaymentService {
         PaymentService {
             tx_store,
             ac_store,
@@ -119,13 +121,15 @@ impl PaymentServiceTrait for PaymentService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // use crate::repositories::in_memory::InMemoryDatabase;
     use crate::repositories::transaction::in_memory::TransactionRepositoryInMemory;
-    use crate::repositories::account::in_memory::AccountRepositoryInMemory;
+    use crate::repositories::account::in_memory::build_account_repository_in_memory;
 
     #[test]
     fn deposit_creates_in_a_new_account() {
         let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
-        let account_repository = Box::new(AccountRepositoryInMemory::new());
+        // let account_repository = Box::new(AccountRepositoryInMemory::new());
+        let account_repository = Box::new(build_account_repository_in_memory());
         let mut ps = PaymentService::new(transaction_repository, account_repository);
         let client_id = 42;
         let expected = Account {
