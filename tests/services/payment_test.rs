@@ -1,6 +1,6 @@
 use payments::services::payment::{PaymentService, PaymentServiceTrait};
 use payments::repositories::transaction::in_memory::TransactionRepositoryInMemory;
-use payments::repositories::account::in_memory::AccountRepositoryInMemory;
+use payments::repositories::account::in_memory::build_account_repository_in_memory;
 
 use payments::core::entities::account::Account;
 
@@ -8,7 +8,7 @@ use payments::core::entities::account::Account;
 #[test]
 fn deposit_creates_in_a_new_account() {
     let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
-    let account_repository = Box::new(AccountRepositoryInMemory::new());
+    let account_repository = Box::new(build_account_repository_in_memory());
     let mut ps = PaymentService::new(transaction_repository, account_repository);
     let client_id = 42;
     let expected = Account {

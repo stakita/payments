@@ -1,6 +1,5 @@
 
 use crate::repositories::in_memory::{
-    InMemoryDatabaseTrait,
     InMemoryDatabase,
     DefaultRecord,
 };
@@ -25,6 +24,7 @@ pub fn build_account_repository_in_memory() -> InMemoryDatabase<u16, Account> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::repositories::in_memory::InMemoryDatabaseTrait;
 
     #[test]
     fn it_can_insert_and_find() {

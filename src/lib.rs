@@ -1,4 +1,5 @@
 use csv::{ReaderBuilder, Trim, Reader};
+use repositories::account::in_memory::build_account_repository_in_memory;
 use std::fs::File;
 use serde::Deserialize;
 use std::fmt;
@@ -53,29 +54,30 @@ fn transaction_line_iter(filename: &str) -> Result<Reader<File>> {
 }
 
 fn process_lines(mut reader: Reader<File>) -> Result<()> {
-    // // Instantiate here to inject the service into the application functions, specifically process_transaction()
-    // let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
-    // let account_repository = Box::new(AccountRepositoryInMemory::new());
-    // let mut payment_service: Box<dyn PaymentServiceTrait> = Box::new(PaymentService::new(transaction_repository, account_repository));
+    // Instantiate here to inject the service into the application functions, specifically process_transaction()
+    let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
+    let account_repository = Box::new(build_account_repository_in_memory());
 
-    // let line_offset = 2;
-    // for (i, line_result) in reader.deserialize::<TransactionLine>().enumerate() {
-    //     // TODO: remove
-    //     eprintln!("i: {}", i);
-    //     let transaction = line_result.unwrap();
+    let mut payment_service: Box<dyn PaymentServiceTrait> = Box::new(PaymentService::new(transaction_repository, account_repository));
 
-    //     transaction.validate().map_err(|error| {
-    //         anyhow!("Error processing input line {}: {}", i + line_offset, error)
-    //     })?;
+    let line_offset = 2;
+    for (i, line_result) in reader.deserialize::<TransactionLine>().enumerate() {
+        // TODO: remove
+        eprintln!("i: {}", i);
+        let transaction = line_result.unwrap();
 
-    //     process_transaction(&transaction, &mut payment_service).map_err(|error| {
-    //         anyhow!("Error processing input line {}: {}", i + line_offset, error)
-    //     })?;
-    // }
+        transaction.validate().map_err(|error| {
+            anyhow!("Error processing input line {}: {}", i + line_offset, error)
+        })?;
 
-    // for account in payment_service.get_accounts() {
-    //     println!("account: {:?}", account);
-    // }
+        process_transaction(&transaction, &mut payment_service).map_err(|error| {
+            anyhow!("Error processing input line {}: {}", i + line_offset, error)
+        })?;
+    }
+
+    for account in payment_service.get_accounts() {
+        println!("account: {:?}", account);
+    }
     Ok(())
 }
 
