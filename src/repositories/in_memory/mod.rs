@@ -1,5 +1,5 @@
 
-use std::{collections::BTreeMap, fmt::Display};
+use std::{collections::{BTreeMap, btree_map::Entry::Occupied}};
 use crate::fmt::Debug;
 
 pub trait InMemoryDatabaseTrait<K, T> {
@@ -36,11 +36,10 @@ pub trait DefaultRecord<K, T>: Sized {
 }
 
 
-
 impl<K, T> InMemoryDatabaseTrait<K, T> for InMemoryDatabase<K, T>
 where
-    K: Ord,
-    T: DefaultRecord
+    K: Ord + Copy,
+    T: DefaultRecord<K, T>
 {
 
     fn update(&mut self, client_id: K, account: T) {
@@ -52,7 +51,7 @@ where
     }
 
     fn find_or_create(&mut self, client_id: K) -> &T {
-        self.store.entry(client_id).or_insert_with(|| T::default(client_id))
+        self.store.entry(client_id).or_insert(T::default(client_id))
     }
 
     fn find_all(&mut self) -> Vec<&T> {
@@ -69,30 +68,25 @@ where
 mod tests {
     use super::*;
 
-    #[derive(Debug)]
-    pub struct Account {
-        pub client_id: u16,
-        pub available: f64,
-        pub held: f64,
-        pub total: f64,
-        pub locked: bool,
-    }
-
-    impl<u16, Account> DefaultRecord for Account {
-        fn default(key: u16) -> Account {
-            Account {
-                client_id: key,
-                available: 0.0,
-                held: 0.0,
-                total: 0.0,
-                locked: false,
-            }
-        }
-    }
+    pub use crate::core::entities::account::Account;
+    pub use crate::core::entities::transaction::Transaction;
 
     #[test]
-    fn can_create_u16_Account_db() {
-        let db = InMemoryDatabase::<u16, Account>::new();
+    fn default_build() {
+
+        impl DefaultRecord<u16, Account> for Account {
+            fn default(key: u16) -> Account {
+                Account {
+                    client_id: 42,
+                    available: 42.42,
+                    held: 0.0,
+                    total: 42.42,
+                    locked: false,
+                }
+            }
+        }
+
+        let mut db = InMemoryDatabase::<u16, Account>::new();
 
         let a1 = Account {
             client_id: 42,
@@ -102,8 +96,68 @@ mod tests {
             locked: false,
         };
 
+        db.update(42, a1);
+
+        db.find_or_create(55);
+
+        for a in db.find_all() {
+            println!("{:?}", a);
+        }
+
+    }
+
+    #[test]
+    fn can_create_u16_account_db() {
+        let mut db = InMemoryDatabase::<u16, Account>::new();
+
+        let a1 = Account {
+            client_id: 42,
+            available: 42.42,
+            held: 0.0,
+            total: 42.42,
+            locked: false,
+        };
 
         db.update(42, a1);
+
+        let a2 = Account {
+            client_id: 52,
+            available: 52.52,
+            held: 0.0,
+            total: 52.52,
+            locked: false,
+        };
+
+        db.update(52, a2);
+
+        for a in db.find_all() {
+            println!("{:?}", a);
+        }
+    }
+
+    #[test]
+    fn can_create_u32_transaction_db() {
+
+        impl DefaultRecord<u32, Transaction> for Transaction {
+            fn default(key: u32) -> Transaction {
+                // panic!("Building default transaction doesn't make sense")
+                Transaction { tx_id: key, tx_type: 0, client_id: 0, amount: 0.0, state: 0 }
+            }
+        }
+
+        let mut db = InMemoryDatabase::<u32, Transaction>::new();
+
+        let t1 = Transaction { tx_id: 1111111, tx_type: 0, client_id: 11, amount: 11.11, state: 0 };
+
+        db.update(11, t1);
+
+        let t2 = Transaction { tx_id: 2222222, tx_type: 0, client_id: 22, amount: 22.22, state: 0 };
+
+        db.update(22, t2);
+
+        for a in db.find_all() {
+            println!("{:?}", a);
+        }
     }
 
 }
