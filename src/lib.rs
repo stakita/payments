@@ -13,7 +13,6 @@ pub mod core;
 pub mod services;
 use crate::services::payment::{PaymentService, PaymentServiceTrait};
 use crate::repositories::transaction::in_memory::TransactionRepositoryInMemory;
-use crate::repositories::account::in_memory::AccountRepositoryInMemory;
 
 pub struct Config {
     pub filename: String,

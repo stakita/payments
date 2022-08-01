@@ -1,14 +1,10 @@
 
-use std::collections::BTreeMap;
-
 use crate::repositories::in_memory::{
     InMemoryDatabaseTrait,
     InMemoryDatabase,
     DefaultRecord,
 };
 pub use crate::core::entities::account::Account;
-
-use super::AccountRepositoryTrait;
 
 impl DefaultRecord<u16, Account> for Account {
     fn default(key: u16) -> Account {
@@ -20,53 +16,6 @@ impl DefaultRecord<u16, Account> for Account {
             locked: false,
         }
     }
-}
-
-// use crate::repositories::account::{
-//     Account,
-//     AccountRepositoryTrait
-// };
-
-pub struct AccountRepositoryInMemory {
-    // pub store: Box<BTreeMap<u16, Account>>,
-    pub store: Box<InMemoryDatabase<u16, Account>>,
-}
-
-impl AccountRepositoryInMemory {
-    pub fn new() -> AccountRepositoryInMemory {
-        AccountRepositoryInMemory {
-            store: Box::new(InMemoryDatabase::<u16, Account>::new()),
-        }
-    }
-
-    pub fn print(&mut self) {
-        for entry in self.store.find_all() {
-            println!("{:?}", entry);
-        }
-    }
-}
-
-impl AccountRepositoryTrait for AccountRepositoryInMemory {
-
-        // fn insert(&mut self, account: Account) {
-        //     let _ = &self.store.insert(account.client_id, account);
-        // }
-
-        fn update(&mut self, client_id: u16, account: Account) {
-            self.store.update(client_id, account);
-        }
-
-        fn find(&mut self, client_id: u16) -> Option<&Account> {
-            self.store.find(client_id)
-        }
-
-        fn find_or_create(&mut self, client_id: u16) -> &Account {
-            self.store.find_or_create(client_id)
-        }
-
-        fn find_all(&mut self) -> Vec<&Account> {
-            self.store.find_all()
-        }
 }
 
 pub fn build_account_repository_in_memory() -> InMemoryDatabase<u16, Account> {
