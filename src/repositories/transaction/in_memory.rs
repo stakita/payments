@@ -1,31 +1,53 @@
 
+use std::collections::BTreeMap;
 
-use crate::repositories::in_memory::{
-    InMemoryDatabase,
-    DefaultRecord,
-};
-pub use crate::core::entities::transaction::Transaction;
+use super::TransactionRepositoryTrait;
+use crate::core::entities::transaction::Transaction;
 
-impl DefaultRecord<u32, Transaction> for Transaction {
-    fn default(_key: u32) -> Transaction {
-        panic!("Building default transaction doesn't make sense")
-        // Transaction { tx_id: key, tx_type: 0, client_id: 0, amount: 0.0, state: 0 }
+pub struct TransactionRepositoryInMemory {
+    pub store: Box<BTreeMap<u32, Transaction>>,
+}
+
+impl TransactionRepositoryInMemory {
+    pub fn new() -> TransactionRepositoryInMemory {
+        TransactionRepositoryInMemory {
+            store: Box::new(BTreeMap::new()),
+        }
+    }
+
+    pub fn print(&self) {
+        for (key, value) in self.store.iter() {
+            println!("key: {:?}, value: {:?}", key, value);
+        }
     }
 }
 
-pub fn build_transaction_repository_in_memory() -> InMemoryDatabase<u32, Transaction> {
-    InMemoryDatabase::<u32, Transaction>::new()
+impl TransactionRepositoryTrait for TransactionRepositoryInMemory {
+    fn update(&mut self, tx_id: u32, transaction: Transaction) {
+        self.store.insert(tx_id, transaction);
+    }
+
+    fn find(&mut self, tx_id: u32) -> Option<&Transaction> {
+        self.store.get(&tx_id)
+    }
+
+    fn find_all(&mut self) -> Vec<&Transaction> {
+        let mut elements = Vec::<&Transaction>::new();
+        for key in self.store.keys() {
+            elements.push(self.store.get(key).unwrap());
+        }
+        elements
+    }
 }
 
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::repositories::in_memory::InMemoryDatabaseTrait;
 
     #[test]
     fn it_can_insert_and_find() {
-        let mut tr = build_transaction_repository_in_memory();
+        let mut tr = TransactionRepositoryInMemory::new();
 
         let a = Transaction {
             tx_id: 1600002,
@@ -64,7 +86,7 @@ mod tests {
 
     #[test]
     fn it_can_insert_and_find_all_sorted() {
-        let mut tr = build_transaction_repository_in_memory();
+        let mut tr = TransactionRepositoryInMemory::new();
 
         let a = Transaction {
             tx_id: 1600042,

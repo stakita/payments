@@ -1,11 +1,12 @@
 
+
 use anyhow::Result;
 
-use crate::repositories::in_memory::InMemoryDatabaseTrait;
+use crate::repositories::account::AccountRepositoryTrait;
 use crate::repositories::transaction::{
     Transaction,
     TransactionType,
-    TransactionState,
+    TransactionState, TransactionRepositoryTrait,
 };
 
 use crate::core::entities::account::Account;
@@ -26,12 +27,13 @@ pub trait PaymentServiceTrait {
 }
 
 pub struct PaymentService {
-    tx_store: Box<dyn InMemoryDatabaseTrait<u32, Transaction>>,
-    ac_store: Box<dyn InMemoryDatabaseTrait<u16, Account>>,
+    // tx_store: Box<dyn InMemoryDatabaseTrait<u32, Transaction>>,
+    tx_store: Box<dyn TransactionRepositoryTrait>,
+    ac_store: Box<dyn AccountRepositoryTrait>,
 }
 
 impl PaymentService {
-    pub fn new(tx_store: Box<dyn InMemoryDatabaseTrait<u32, Transaction>>, ac_store: Box<dyn InMemoryDatabaseTrait<u16, Account>>) -> PaymentService {
+    pub fn new(tx_store: Box<dyn TransactionRepositoryTrait>, ac_store: Box<dyn AccountRepositoryTrait>) -> PaymentService {
         PaymentService {
             tx_store,
             ac_store,
@@ -51,7 +53,7 @@ impl PaymentServiceTrait for PaymentService {
         // else
             // create
         // get account, creating it if needed
-        let acc = self.ac_store.find_or_create(client_id);
+        let acc = self.ac_store.find_or_create(client_id).unwrap();
 
         // store the transaction
         self.tx_store.update(tx_id, Transaction{
@@ -115,36 +117,63 @@ impl PaymentServiceTrait for PaymentService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::repositories::transaction::in_memory::build_transaction_repository_in_memory;
-    use crate::repositories::account::in_memory::build_account_repository_in_memory;
+    use crate::repositories::transaction::TransactionRepositoryTrait;
 
-    #[test]
-    fn deposit_creates_in_a_new_account() {
-        let transaction_repository = Box::new(build_transaction_repository_in_memory());
-        let account_repository = Box::new(build_account_repository_in_memory());
-        let mut ps = PaymentService::new(transaction_repository, account_repository);
-        let client_id = 42;
-        let expected = Account {
-            client_id: client_id,
-            available: 42.42,
-            held: 0.0,
-            total: 42.42,
-            locked: false,
-        };
-
-        let _ = ps.deposit(client_id, 1, 42.42);
-        let acc = ps.get_account(client_id).unwrap();
-        assert_eq!(acc, &expected);
-
-        let expected2 = Account {
-            available: 52.53,
-            total: 52.53,
-            ..expected
-        };
-
-        let _ = ps.deposit(client_id, 1, 10.11);
-        let acc = ps.get_account(client_id).unwrap();
-        assert_eq!(acc, &expected2);
-
+    struct MockTransactionRepository {
+        last_inserted: Option<Transaction>,
     }
+
+    impl TransactionRepositoryTrait for  MockTransactionRepository {
+        fn update(&mut self, tx_id: u32, transaction: Transaction) {
+            self.last_inserted = Some(transaction);
+        }
+
+        fn find(&mut self, tx_id: u32) -> Option<&Transaction> {
+            None
+        }
+
+        fn find_all(&mut self) -> Vec<&Transaction> {
+            Vec::new()
+        }
+    }
+
+    impl MockTransactionRepository {
+        fn get_last_inserted(&self) -> Option<&Transaction> {
+            match &self.last_inserted {
+                Some(t) => Some(&t),
+                None => None,
+            }
+        }
+    }
+
+
+    // #[test]
+    // fn deposit_creates_in_a_new_account() {
+    //     let transaction_repository = Box::new(MockTransaction {});
+    //     let account_repository = Box::new(build_account_repository_in_memory());
+    //     let mut ps = PaymentService::new(transaction_repository, account_repository);
+    //     let client_id = 42;
+    //     let expected = Account {
+    //         client_id: client_id,
+    //         available: 42.42,
+    //         held: 0.0,
+    //         total: 42.42,
+    //         locked: false,
+    //     };
+
+    //     let _ = ps.deposit(client_id, 1, 42.42);
+    //     let acc = ps.get_account(client_id).unwrap();
+    //     assert_eq!(acc, &expected);
+
+    //     let expected2 = Account {
+    //         available: 52.53,
+    //         total: 52.53,
+    //         ..expected
+    //     };
+
+    //     let _ = ps.deposit(client_id, 1, 10.11);
+    //     let acc = ps.get_account(client_id).unwrap();
+    //     assert_eq!(acc, &expected2);
+
+    // }
 }

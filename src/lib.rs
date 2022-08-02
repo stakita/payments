@@ -1,5 +1,5 @@
 use csv::{ReaderBuilder, Trim, Reader};
-use repositories::account::in_memory::build_account_repository_in_memory;
+use repositories::{account::in_memory::AccountRepositoryInMemory, transaction::in_memory::TransactionRepositoryInMemory};
 use std::fs::File;
 use serde::Deserialize;
 use std::fmt;
@@ -13,7 +13,7 @@ pub mod core;
 
 pub mod services;
 use crate::services::payment::{PaymentService, PaymentServiceTrait};
-use crate::repositories::transaction::in_memory::build_transaction_repository_in_memory;
+// use crate::repositories::transaction::in_memory::build_transaction_repository_in_memory;
 
 pub struct Config {
     pub filename: String,
@@ -55,8 +55,8 @@ fn transaction_line_iter(filename: &str) -> Result<Reader<File>> {
 
 fn process_lines(mut reader: Reader<File>) -> Result<()> {
     // Instantiate here to inject the service into the application functions, specifically process_transaction()
-    let transaction_repository = Box::new(build_transaction_repository_in_memory());
-    let account_repository = Box::new(build_account_repository_in_memory());
+    let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
+    let account_repository = Box::new(AccountRepositoryInMemory::new());
 
     let mut payment_service: Box<dyn PaymentServiceTrait> = Box::new(PaymentService::new(transaction_repository, account_repository));
 
