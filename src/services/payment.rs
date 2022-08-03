@@ -159,12 +159,75 @@ impl PaymentServiceTrait for PaymentService {
     }
 
     fn resolve(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
-        eprintln!("resolve");
+        // get account
+        let acc = match self.ac_store.find(client_id) {
+            Some(a) => a,
+            None => return Err(anyhow!("PaymentServiceError::AccountDoesNotExist")),
+        };
+        // bail out if account is locked
+        if acc.locked {
+            return Err(anyhow!("PaymentServiceError::AccountLocked"));
+        }
+        // handle non-existant transaction
+        let tx = match self.tx_store.find(tx_id) {
+            Some(a) => a,
+            None => return Err(anyhow!("PaymentServiceError::TransactionDoesNotExist")),
+        };
+        // handle incorrect transaction state
+        if tx.state != TransactionState::Disputed as u8 {
+            return Err(anyhow!("PaymentServiceError::InvalidTransactionState"));
+        }
+
+        let acc = Account {
+            client_id: acc.client_id,
+            available: acc.available + tx.amount,
+            held: acc.held - tx.amount,
+            total: acc.total,
+            locked: acc.locked,
+        };
+        let tx = Transaction {
+            state: TransactionState::Normal as u8,
+            ..*tx
+        };
+
+        self.ac_store.update(acc.client_id, acc);
+        self.tx_store.update(tx.tx_id, tx);
+
         Ok(())
     }
 
     fn chargeback(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
-        eprintln!("chargeback");
+        // get account
+        let acc = match self.ac_store.find(client_id) {
+            Some(a) => a,
+            None => return Err(anyhow!("PaymentServiceError::AccountDoesNotExist")),
+        };
+        // bail out if account is locked
+        if acc.locked {
+            return Err(anyhow!("PaymentServiceError::AccountLocked"));
+        }
+        // handle non-existant transaction
+        // let tx = match self.tx_store.find(tx_id) {
+        //     Some(a) => a,
+        //     None => return Err(anyhow!("PaymentServiceError::TransactionDoesNotExist")),
+        // };
+        // // handle incorrect transaction state
+        // if tx.state != TransactionState::Normal as u8 {
+        //     return Err(anyhow!("PaymentServiceError::InvalidTransactionState"));
+        // }
+
+        // let acc = Account {
+        //     client_id: acc.client_id,
+        //     available: acc.available - tx.amount,
+        //     held: acc.held + tx.amount,
+        //     total: acc.total,
+        //     locked: acc.locked,
+        // };
+        // let tx = Transaction {
+        //     state: TransactionState::Disputed as u8,
+        //     ..*tx
+        // };
+
         Ok(())
     }
 
