@@ -18,13 +18,13 @@ pub trait PaymentServiceTrait {
     fn dispute(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
     fn resolve(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
     fn chargeback(&mut self, client_id: u16, tx_id: u32) -> Result<()>;
-    fn get_account<'a>(&'a mut self, client_id: u16) -> Option<&'a Account> {
+    fn get_account<'a>(&'a mut self, _client_id: u16) -> Option<&'a Account> {
         None
     }
     fn get_accounts<'a>(&'a mut self) -> Vec<&'a Account> {
         Vec::new()
     }
-    fn get_transaction<'a>(&'a mut self, tx_id: u32) -> Option<&'a Transaction> {
+    fn get_transaction<'a>(&'a mut self, _tx_id: u32) -> Option<&'a Transaction> {
         None
     }
     fn get_transactions<'a>(&'a mut self) -> Vec<&'a Transaction> {
@@ -53,13 +53,12 @@ impl PaymentServiceTrait for PaymentService {
     fn deposit(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
         eprintln!("deposit");
 
-        // Check if account exists
-            // If account locked: skip transaction
-            // else continue
-        // else
-            // create
         // get account, creating it if needed
         let acc = self.ac_store.find_or_create(client_id).unwrap();
+
+        if acc.locked {
+            return Err(anyhow!("PaymentServiceError::AccountLocked"));
+        }
 
         // store the transaction
         self.tx_store.update(tx_id, Transaction{
