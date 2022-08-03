@@ -24,6 +24,12 @@ pub trait PaymentServiceTrait {
     fn get_accounts<'a>(&'a mut self) -> Vec<&'a Account> {
         Vec::new()
     }
+    fn get_transaction<'a>(&'a mut self, tx_id: u32) -> Option<&'a Transaction> {
+        None
+    }
+    fn get_transactions<'a>(&'a mut self) -> Vec<&'a Transaction> {
+        Vec::new()
+    }
 }
 
 pub struct PaymentService {
@@ -111,40 +117,48 @@ impl PaymentServiceTrait for PaymentService {
     fn get_accounts<'a>(&'a mut self) -> Vec<&'a Account> {
         self.ac_store.find_all()
     }
+
+    fn get_transaction<'a>(&'a mut self, tx_id: u32) -> Option<&'a Transaction> {
+        self.tx_store.find(tx_id)
+    }
+
+    fn get_transactions<'a>(&'a mut self) -> Vec<&'a Transaction> {
+        self.tx_store.find_all()
+    }
 }
 
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::repositories::transaction::TransactionRepositoryTrait;
+    // use super::*;
+    // use crate::repositories::transaction::TransactionRepositoryTrait;
 
-    struct MockTransactionRepository {
-        last_inserted: Option<Transaction>,
-    }
+    // struct MockTransactionRepository {
+    //     last_inserted: Option<Transaction>,
+    // }
 
-    impl TransactionRepositoryTrait for  MockTransactionRepository {
-        fn update(&mut self, tx_id: u32, transaction: Transaction) {
-            self.last_inserted = Some(transaction);
-        }
+    // impl TransactionRepositoryTrait for  MockTransactionRepository {
+    //     fn update(&mut self, tx_id: u32, transaction: Transaction) {
+    //         self.last_inserted = Some(transaction);
+    //     }
 
-        fn find(&mut self, tx_id: u32) -> Option<&Transaction> {
-            None
-        }
+    //     fn find(&mut self, tx_id: u32) -> Option<&Transaction> {
+    //         None
+    //     }
 
-        fn find_all(&mut self) -> Vec<&Transaction> {
-            Vec::new()
-        }
-    }
+    //     fn find_all(&mut self) -> Vec<&Transaction> {
+    //         Vec::new()
+    //     }
+    // }
 
-    impl MockTransactionRepository {
-        fn get_last_inserted(&self) -> Option<&Transaction> {
-            match &self.last_inserted {
-                Some(t) => Some(&t),
-                None => None,
-            }
-        }
-    }
+    // impl MockTransactionRepository {
+    //     fn get_last_inserted(&self) -> Option<&Transaction> {
+    //         match &self.last_inserted {
+    //             Some(t) => Some(&t),
+    //             None => None,
+    //         }
+    //     }
+    // }
 
 
     // #[test]

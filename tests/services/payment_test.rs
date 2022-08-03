@@ -11,6 +11,7 @@ fn deposit_creates_in_a_new_account() {
     let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
     let account_repository = Box::new(AccountRepositoryInMemory::new());
     let mut ps = PaymentService::new(transaction_repository, account_repository);
+
     let client_id = 42;
     let expected = Account {
         client_id: client_id,
@@ -33,5 +34,10 @@ fn deposit_creates_in_a_new_account() {
     let _ = ps.deposit(client_id, 1, 10.11);
     let acc = ps.get_account(client_id).unwrap();
     assert_eq!(acc, &expected2);
+
+    println!("accounts: {:?}", ps.get_accounts());
+    println!("transactions: {:?}", ps.get_transactions());
+    println!("accounts: {:?}", ps.get_accounts());
+    println!("transactions: {:?}", ps.get_transactions());
 
 }
