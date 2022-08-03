@@ -1,16 +1,11 @@
-
-
 use anyhow::Result;
 
 use crate::repositories::account::AccountRepositoryTrait;
 use crate::repositories::transaction::{
-    Transaction,
-    TransactionType,
-    TransactionState, TransactionRepositoryTrait,
+    Transaction, TransactionRepositoryTrait, TransactionState, TransactionType,
 };
 
 use crate::core::entities::account::Account;
-
 
 pub trait PaymentServiceTrait {
     fn deposit(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()>;
@@ -33,48 +28,49 @@ pub trait PaymentServiceTrait {
 }
 
 pub struct PaymentService {
-    // tx_store: Box<dyn InMemoryDatabaseTrait<u32, Transaction>>,
     tx_store: Box<dyn TransactionRepositoryTrait>,
     ac_store: Box<dyn AccountRepositoryTrait>,
 }
 
 impl PaymentService {
-    pub fn new(tx_store: Box<dyn TransactionRepositoryTrait>, ac_store: Box<dyn AccountRepositoryTrait>) -> PaymentService {
-        PaymentService {
-            tx_store,
-            ac_store,
-        }
+    pub fn new(
+        tx_store: Box<dyn TransactionRepositoryTrait>,
+        ac_store: Box<dyn AccountRepositoryTrait>,
+    ) -> PaymentService {
+        PaymentService { tx_store, ac_store }
     }
 }
 
-
 impl PaymentServiceTrait for PaymentService {
-
     fn deposit(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
         eprintln!("deposit");
 
         // get account, creating it if needed
         let acc = self.ac_store.find_or_create(client_id).unwrap();
 
+        // bail out if account is locked
         if acc.locked {
             return Err(anyhow!("PaymentServiceError::AccountLocked"));
         }
 
         // store the transaction
-        self.tx_store.update(tx_id, Transaction{
+        self.tx_store.update(
             tx_id,
-            tx_type: Transaction::transaction_type_encode(TransactionType::Deposit),
-            client_id,
-            amount,
-            state: Transaction::transaction_state_encode(TransactionState::Normal),
-        });
+            Transaction {
+                tx_id,
+                tx_type: Transaction::transaction_type_encode(TransactionType::Deposit),
+                client_id,
+                amount,
+                state: Transaction::transaction_state_encode(TransactionState::Normal),
+            },
+        );
 
         // update account
         let acc = Account {
             client_id,
-            available: acc.available + amount,
+            available: acc.available + Account::to_fixed(amount),
             held: acc.held,
-            total: acc.total + amount,
+            total: acc.total + Account::to_fixed(amount),
             locked: false,
         };
         let _ = self.ac_store.update(client_id, acc);
@@ -84,18 +80,58 @@ impl PaymentServiceTrait for PaymentService {
 
     fn withdrawal(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
         eprintln!("withdrawal");
-        self.tx_store.update(tx_id, Transaction{
-            tx_id: tx_id,
-            tx_type: Transaction::transaction_type_encode(TransactionType::Withdrawal),
-            client_id: client_id,
-            amount: amount,
-            state: Transaction::transaction_state_encode(TransactionState::Normal),
-        });
+        // get account
+        let acc = match self.ac_store.find(client_id) {
+            Some(a) => a,
+            None => return Err(anyhow!("PaymentServiceError::AccountDoesNotExist")),
+        };
+
+        // bail out if account is locked
+        if acc.locked {
+            return Err(anyhow!("PaymentServiceError::AccountLocked"));
+        }
+
+        // bail out if insufficient funds
+        if acc.available() < Account::to_fixed(amount) {
+            return Err(anyhow!("PaymentServiceError::InsufficientFunds"));
+        }
+
+        self.tx_store.update(
+            tx_id,
+            Transaction {
+                tx_id,
+                tx_type: Transaction::transaction_type_encode(TransactionType::Withdrawal),
+                client_id,
+                amount,
+                state: Transaction::transaction_state_encode(TransactionState::Normal),
+            },
+        );
+
+        // update account
+        let acc = Account {
+            client_id,
+            available: acc.available - Account::to_fixed(amount),
+            held: acc.held,
+            total: acc.total - Account::to_fixed(amount),
+            locked: false,
+        };
+        let _ = self.ac_store.update(client_id, acc);
+
         Ok(())
     }
 
     fn dispute(&mut self, client_id: u16, tx_id: u32) -> Result<()> {
-        eprintln!("dispute");
+        // get account
+        let acc = match self.ac_store.find(client_id) {
+            Some(a) => a,
+            None => return Err(anyhow!("PaymentServiceError::AccountDoesNotExist")),
+        };
+
+        // bail out if account is locked
+        if acc.locked {
+            return Err(anyhow!("PaymentServiceError::AccountLocked"));
+        }
+
         Ok(())
     }
 
@@ -125,7 +161,6 @@ impl PaymentServiceTrait for PaymentService {
         self.tx_store.find_all()
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -158,7 +193,6 @@ mod tests {
     //         }
     //     }
     // }
-
 
     // #[test]
     // fn deposit_creates_in_a_new_account() {

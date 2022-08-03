@@ -1,4 +1,3 @@
-
 pub mod in_memory;
 
 // Use the Account structure from core in repository layer as it is identical
@@ -6,13 +5,7 @@ pub use crate::core::entities::account::Account;
 
 impl Account {
     pub fn build_default_account(client_id: u16) -> Account {
-        Account {
-            client_id: client_id,
-            available: 0.0,
-            held: 0.0,
-            total: 0.0,
-            locked: false,
-        }
+        Account::new(client_id, 0.0, 0.0, 0.0, false)
     }
 }
 

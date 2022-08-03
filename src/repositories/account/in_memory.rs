@@ -15,13 +15,7 @@ impl AccountRepositoryInMemory {
     }
 
     pub fn default(key: u16) -> Account {
-        Account {
-            client_id: key,
-            available: 0.0,
-            held: 0.0,
-            total: 0.0,
-            locked: false,
-        }
+        Account::new(key, 0.0, 0.0, 0.0, false)
     }
 
     pub fn print(&self) {
@@ -41,7 +35,11 @@ impl AccountRepositoryTrait for AccountRepositoryInMemory {
     }
 
     fn find_or_create(&mut self, client_id: u16) -> Option<&Account> {
-        Some(self.store.entry(client_id).or_insert(AccountRepositoryInMemory::default(client_id)))
+        Some(
+            self.store
+                .entry(client_id)
+                .or_insert(AccountRepositoryInMemory::default(client_id)),
+        )
     }
 
     fn find_all(&mut self) -> Vec<&Account> {
@@ -53,7 +51,6 @@ impl AccountRepositoryTrait for AccountRepositoryInMemory {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -62,20 +59,8 @@ mod tests {
     fn it_can_insert_and_find() {
         let mut ar = AccountRepositoryInMemory::new();
 
-        let a = Account {
-            client_id: 42,
-            available: 1.23,
-            held: 0.0,
-            total: 1.23,
-            locked: false,
-        };
-        let b = Account {
-            client_id: 21,
-            available: 0.23,
-            held: 0.0,
-            total: 0.23,
-            locked: false,
-        };
+        let a = Account::new(42, 1.23, 0.0, 1.23, false);
+        let b = Account::new(21, 0.23, 0.0, 0.23, false);
 
         ar.update(a.client_id, a.clone());
         ar.update(b.client_id, b.clone());
@@ -91,34 +76,15 @@ mod tests {
         // it fails to find an invalid key
         let res = ar.find(68);
         assert_eq!(res, None);
-
     }
 
     #[test]
     fn it_can_insert_and_find_all_sorted() {
         let mut ar = AccountRepositoryInMemory::new();
 
-        let a = Account {
-            client_id: 42,
-            available: 1.23,
-            held: 0.0,
-            total: 1.23,
-            locked: false,
-        };
-        let b = Account {
-            client_id: 420,
-            available: 10.23,
-            held: 0.0,
-            total: 10.23,
-            locked: true,
-        };
-        let c = Account {
-            client_id: 1,
-            available: 1.11,
-            held: 1.22,
-            total: 1.33,
-            locked: true,
-        };
+        let a = Account::new(42, 1.23, 0.0, 1.23, false);
+        let b = Account::new(420, 10.23, 0.0, 10.23, true);
+        let c = Account::new(1, 1.11, 1.22, 1.33, true);
 
         ar.update(a.client_id, a.clone());
         ar.update(b.client_id, b.clone());
@@ -136,13 +102,7 @@ mod tests {
     fn it_can_create_a_new_account() {
         let mut ar = AccountRepositoryInMemory::new();
 
-        let expected = Account {
-            client_id: 42,
-            available: 0.0,
-            held: 0.0,
-            total: 0.0,
-            locked: false,
-        };
+        let expected = Account::new(42, 0.0, 0.0, 0.0, false);
 
         let account = ar.find_or_create(42).unwrap();
 
@@ -153,21 +113,9 @@ mod tests {
     fn it_can_update_an_existing_account() {
         let mut ar = AccountRepositoryInMemory::new();
 
-        let initial = Account {
-            client_id: 42,
-            available: 42.42,
-            held: 0.0,
-            total: 42.42,
-            locked: false,
-        };
+        let initial = Account::new(42, 42.42, 0.0, 42.42, false);
 
-        let update = Account {
-            client_id: 42,
-            available: 20.23,
-            held: 3.0,
-            total: 23.23,
-            locked: false,
-        };
+        let update = Account::new(42, 20.23, 3.0, 23.23, false);
 
         let expected = update.clone();
 
