@@ -207,26 +207,29 @@ impl PaymentServiceTrait for PaymentService {
             return Err(anyhow!("PaymentServiceError::AccountLocked"));
         }
         // handle non-existant transaction
-        // let tx = match self.tx_store.find(tx_id) {
-        //     Some(a) => a,
-        //     None => return Err(anyhow!("PaymentServiceError::TransactionDoesNotExist")),
-        // };
-        // // handle incorrect transaction state
-        // if tx.state != TransactionState::Normal as u8 {
-        //     return Err(anyhow!("PaymentServiceError::InvalidTransactionState"));
-        // }
+        let tx = match self.tx_store.find(tx_id) {
+            Some(a) => a,
+            None => return Err(anyhow!("PaymentServiceError::TransactionDoesNotExist")),
+        };
+        // handle incorrect transaction state
+        if tx.state != TransactionState::Disputed as u8 {
+            return Err(anyhow!("PaymentServiceError::InvalidTransactionState"));
+        }
 
-        // let acc = Account {
-        //     client_id: acc.client_id,
-        //     available: acc.available - tx.amount,
-        //     held: acc.held + tx.amount,
-        //     total: acc.total,
-        //     locked: acc.locked,
-        // };
-        // let tx = Transaction {
-        //     state: TransactionState::Disputed as u8,
-        //     ..*tx
-        // };
+        let acc = Account {
+            client_id: acc.client_id,
+            available: acc.available,
+            held: acc.held - tx.amount,
+            total: acc.total - tx.amount,
+            locked: true,
+        };
+        let tx = Transaction {
+            state: TransactionState::Reversed as u8,
+            ..*tx
+        };
+
+        self.ac_store.update(acc.client_id, acc);
+        self.tx_store.update(tx.tx_id, tx);
 
         Ok(())
     }
@@ -249,64 +252,4 @@ impl PaymentServiceTrait for PaymentService {
 }
 
 #[cfg(test)]
-mod tests {
-    // use super::*;
-    // use crate::repositories::transaction::TransactionRepositoryTrait;
-
-    // struct MockTransactionRepository {
-    //     last_inserted: Option<Transaction>,
-    // }
-
-    // impl TransactionRepositoryTrait for  MockTransactionRepository {
-    //     fn update(&mut self, tx_id: u32, transaction: Transaction) {
-    //         self.last_inserted = Some(transaction);
-    //     }
-
-    //     fn find(&mut self, tx_id: u32) -> Option<&Transaction> {
-    //         None
-    //     }
-
-    //     fn find_all(&mut self) -> Vec<&Transaction> {
-    //         Vec::new()
-    //     }
-    // }
-
-    // impl MockTransactionRepository {
-    //     fn get_last_inserted(&self) -> Option<&Transaction> {
-    //         match &self.last_inserted {
-    //             Some(t) => Some(&t),
-    //             None => None,
-    //         }
-    //     }
-    // }
-
-    // #[test]
-    // fn deposit_creates_in_a_new_account() {
-    //     let transaction_repository = Box::new(MockTransaction {});
-    //     let account_repository = Box::new(build_account_repository_in_memory());
-    //     let mut ps = PaymentService::new(transaction_repository, account_repository);
-    //     let client_id = 42;
-    //     let expected = Account {
-    //         client_id: client_id,
-    //         available: 42.42,
-    //         held: 0.0,
-    //         total: 42.42,
-    //         locked: false,
-    //     };
-
-    //     let _ = ps.deposit(client_id, 1, 42.42);
-    //     let acc = ps.get_account(client_id).unwrap();
-    //     assert_eq!(acc, &expected);
-
-    //     let expected2 = Account {
-    //         available: 52.53,
-    //         total: 52.53,
-    //         ..expected
-    //     };
-
-    //     let _ = ps.deposit(client_id, 1, 10.11);
-    //     let acc = ps.get_account(client_id).unwrap();
-    //     assert_eq!(acc, &expected2);
-
-    // }
-}
+mod tests {}

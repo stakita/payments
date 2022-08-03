@@ -420,11 +420,45 @@ fn resolve_on_non_existant_transaction_fails() {
     assert!(ps.resolve(client_id, tx_id).is_err());
 }
 
-// #[test]
-// fn chargeback_adjusts_account_amounts_and_transaction_state() {}
+#[test]
+fn chargeback_adjusts_account_amounts_and_transaction_state() {
+    let mut ps = build_payments_service();
 
-// #[test]
-// fn chargeback_handles_incorrect_transaction_state() {}
+    let client_id = 42;
 
-// #[test]
-// fn chargeback_on_non_existant_transaction_fails() {}
+    let tx_id = 1;
+    assert!(!ps.deposit(client_id, tx_id, 42.42).is_err());
+    assert!(!ps.dispute(client_id, tx_id).is_err());
+
+    assert!(!ps.chargeback(client_id, tx_id).is_err());
+
+    let expected_ac = Account::new(client_id, 0.00, 0.00, 0.00, true);
+    let expected_tr = Transaction::new(
+        1,
+        TransactionType::Deposit as u8,
+        client_id,
+        42.42,
+        TransactionState::Reversed as u8,
+    );
+
+    assert_eq!(ps.get_account(client_id).unwrap(), &expected_ac);
+    assert_eq!(ps.get_transaction(tx_id).unwrap(), &expected_tr);
+}
+
+#[test]
+fn chargeback_handles_incorrect_transaction_state() {
+    let client_id = 42;
+    let mut ps = build_payments_service_with_default_account(client_id);
+
+    let normal_tx_id = 1;
+    assert!(ps.chargeback(client_id, normal_tx_id).is_err());
+}
+
+#[test]
+fn chargeback_on_non_existant_transaction_fails() {
+    let client_id = 42;
+    let mut ps = build_payments_service_with_default_account(client_id);
+
+    let tx_id = 888;
+    assert!(ps.chargeback(client_id, tx_id).is_err());
+}
