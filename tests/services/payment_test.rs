@@ -51,25 +51,25 @@ fn build_payments_service_with_empty_account(client_id: u16) -> PaymentService {
     PaymentService::new(transaction_repository, account_repository)
 }
 
-fn build_payments_service_with_default_account(client_id: u16) -> PaymentService {
-    let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
-    let mut account_repository = Box::new(AccountRepositoryInMemory::new());
+// fn build_payments_service_with_default_account(client_id: u16) -> PaymentService {
+//     let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
+//     let mut account_repository = Box::new(AccountRepositoryInMemory::new());
 
-    // Create a locked account
-    let expected_ac = Account {
-        client_id,
-        available: 50.0,
-        held: 10.0,
-        total: 60.0,
-        locked: false,
-    };
-    account_repository
-        .as_mut()
-        .store
-        .insert(client_id, expected_ac.clone());
+//     // Create a locked account
+//     let expected_ac = Account {
+//         client_id,
+//         available: 50.0,
+//         held: 10.0,
+//         total: 60.0,
+//         locked: false,
+//     };
+//     account_repository
+//         .as_mut()
+//         .store
+//         .insert(client_id, expected_ac.clone());
 
-    PaymentService::new(transaction_repository, account_repository)
-}
+//     PaymentService::new(transaction_repository, account_repository)
+// }
 
 #[test]
 fn deposit_creates_in_a_new_account() {
@@ -95,7 +95,7 @@ fn deposit_creates_in_a_new_account() {
     let acc = ps.get_account(client_id);
     assert_eq!(acc, None);
 
-    let _ = ps.deposit(client_id, tx_id, 42.42);
+    assert_eq!((), ps.deposit(client_id, tx_id, 42.42).unwrap());
 
     assert_eq!(ps.get_account(client_id).unwrap(), &expected_ac);
     assert_eq!(ps.get_transaction(tx_id).unwrap(), &expected_tr);
@@ -128,7 +128,7 @@ fn deposit_updates_total_and_available() {
         state: TransactionState::Normal as u8,
     };
 
-    let _ = ps.deposit(client_id, tx_id, 0.0001); // Smallest deposit
+    assert_eq!((), ps.deposit(client_id, tx_id, 0.0001).unwrap());  // Smallest deposit
 
     assert_eq!(ps.get_account(client_id).unwrap(), &expected_ac);
     assert_eq!(ps.get_transaction(tx_id).unwrap(), &expected_tr);
@@ -147,16 +147,7 @@ fn deposit_updates_total_and_available() {
         state: TransactionState::Normal as u8,
     };
 
-    // assert_eq!(ps.deposit(client_id, tx_id, 0.0001), Some(()));
-    // println!("*** x: {:?}", x);
-
-    let _ = ps.deposit(client_id, tx_id, 0.0001);
-    // println!("*** x: {:?}", x);
-
-    // !=  {panic!("crap")}; //{
-    //     Ok(()) => (),
-    //     _ => { panic!("help!") }
-    // };
+    assert_eq!((), ps.deposit(client_id, tx_id, 0.0001).unwrap());  // Smallest deposit
 
     assert_eq!(ps.get_account(client_id).unwrap(), &expected_ac);
     assert_eq!(ps.get_transaction(tx_id).unwrap(), &expected_tr);
