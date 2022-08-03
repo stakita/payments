@@ -1,3 +1,5 @@
+use crate::core::FIXED_DECIMAL_SCALING;
+
 #[derive(PartialEq, Clone, Debug)]
 pub struct Account {
     pub client_id: u16,
@@ -6,8 +8,6 @@ pub struct Account {
     pub total: i128,
     pub locked: bool,
 }
-
-const FIXED_DECIMAL_SCALING: i32 = 10000;
 
 impl Account {
     pub fn new(client_id: u16, available: f64, held: f64, total: f64, locked: bool) -> Account {

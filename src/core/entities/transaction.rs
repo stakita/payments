@@ -1,3 +1,5 @@
+use crate::core::FIXED_DECIMAL_SCALING;
+
 #[derive(PartialEq, Clone, Debug)]
 pub struct Transaction {
     pub tx_id: u32,
@@ -17,8 +19,6 @@ pub enum TransactionState {
     Disputed = 1,
     Reversed = 2,
 }
-
-const FIXED_DECIMAL_SCALING: i32 = 10000;
 
 impl Transaction {
     pub fn new(tx_id: u32, tx_type: u8, client_id: u16, amount: f64, state: u8) -> Transaction {
