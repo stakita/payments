@@ -9,12 +9,12 @@ pub struct Transaction {
 }
 
 pub enum TransactionType {
-    Deposit,
-    Withdrawal,
+    Deposit = 0,
+    Withdrawal = 1,
 }
 
 pub enum TransactionState {
-    Normal,
-    Disputed,
-    Reversed,
+    Normal = 0,
+    Disputed = 1,
+    Reversed = 2,
 }
