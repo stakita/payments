@@ -5,45 +5,47 @@ A toy payments engine
 ## Assumptions:
 
 * Representation of dollar values
-
+  
   * With 4 decimal places precision on amounts, this implies 10k distinct steps per dollar - minimum resolvable amount is 0.0001 dollars
-
+  
   * Assuming normal real world amounts - expect transactions to be less \$1 billion (\$1e9) - may need to revisit this assumption if inflation continues at current trends
-
+  
   * This means we need to resolve steps: `1e9 * 1e4 = 1e13` - this can be represented in `ceil(log2(1e13)) = 44 bits`
-
-  * This is less the mantissa for a 64-bit floating point number (55 bits) so we should be able to repesent this range accurately in that representation
-
-  * If requirements dicatate a larger maximum transaction amount, switching to a fixed point representation (e.g `u64` for dollar amount + `u16` for decimal amount) would allow for accuracy over a wider range
-
+  
+  * This is less the mantissa for a 64-bit floating point number (55 bits) so we should be able to represent this range accurately in that representation
+  
+  * If requirements dictate a larger maximum transaction amount, switching to a fixed point representation (e.g `u64` for dollar amount + `u16` for decimal amount) would allow for accuracy over a wider range
+  
   * This could be an issue for the stored amounts fields on accounts, which could also be updated to be fixed point representation
+  
+  * Will be using `f64` for amount representations for this project for both transactions and account values
 
-  * Will be using `f64` for amount represenations for this project for both transactions and account values
+* Deposit and Withdrawal transactions will always have a positive value in the `amount` field - deposit of a negative amount would just be a withdrawal
 
 * Dispute resolution operations (dispute, resolve, chargeback) can only occur on deposit or withdrawal operations
-
-  * In the case of widthdrawals, the disupted amount has a negative magnitude
+  
+  * In the case of withdrawals, the disputed amount has a negative magnitude
 
 ## Design considerations
 
 * Because the dispute, resolve and chargeback operations don't store amounts, we need to be able to reference the originating deposit or withdrawal transactions at any time after creation
-
+  
   * The current specification states the transaction ID is a `u32` integer which implies `2^32` (~4 billion) records which is probably within the bounds of a single systems memory configuration (for development), but an obvious change to the system would be to make these transaction IDs opaque data blobs (say hashes) or `u64` integers which would require a dedicated data store
-
-  * A key-value or relational database could implement this, however we use a memory backed store with an abstracted inteface to allow simpler implementation during development with the option of changing out the repository implementation at some point in the future
+  
+  * A key-value or relational database could implement this, however we use a memory backed store with an abstracted interface to allow simpler implementation during development with the option of changing out the repository implementation at some point in the future
 
 * The CLI client is the driving application of the core entities business logic, however the service level interfaces should be set up for possible integration into a web gateway or as a consumer of a streaming feed (e.g. Kafka)
-
+  
   * Transactions processed at the service level should have observable outcomes in response to a request to process a transaction:
-
+    
     1. Success - the transaction was processed normally
-
+    
     2. Error - the transaction either:
-
+       
        * Was ignored  - due to incorrect transaction-client specification
-
+       
        * Failed - due to insufficient funds
-
+    
     3. Panic - these indicate some fundamental system failure and should be caught and translated (e.g. 5xx HTTP status in the case of a web client)
 
 ## Transaction States
@@ -106,7 +108,7 @@ state title {
 
 ### Account Records
 
-Account records store the state and total tallys of a client account as well as the locked state of the account. An account in locked state will reject any further transactional updates (deposit, withdraw, dispute, resolve and chargeback).
+Account records store the state and total tallies of a client account as well as the locked state of the account. An account in locked state will reject any further transactional updates (deposit, withdraw, dispute, resolve and chargeback).
 
 The state of the account must be considered during the processing of a transaction.
 
@@ -117,6 +119,110 @@ The state of the account must be considered during the processing of a transacti
 | `held`      | `f64`  | Total funds held in dispute for the account                                                                       |
 | `total`     | `f64`  | Total funds available or held for the account                                                                     |
 | `locked`    | `bool` | State of the account - locked accounts will reject any further transactional state changes (i.e. any transaction) |
+
+## Transaction Handling
+
+There are 5 different transaction types.
+
+### Deposit
+
+A **deposit** will credit the client account which will increase the `available` amount (thus the `total` amount).
+
+The client account does not need to exists prior to a deposit.
+
+#### Preconditions
+
+* the client account:
+  
+  * is not locked
+
+### Withdrawal
+
+A **withdrawal** will debit the client account decreasing the `available` amount (thus the `total` amount)
+
+#### Preconditions
+
+* the client account:
+  
+  * exists
+  
+  * is not locked
+  
+  * has sufficient funds (`available` >= transaction `amount`)
+
+### Dispute
+
+A **dispute** affects the client account by:
+
+* reducing the `available` amount by the disputed transaction `amount`
+
+This also sets the specified `transaction` into the `Disputed` state.
+
+#### Preconditions
+
+* the client account:
+  
+  * exists
+  
+  * is not locked
+
+* the transaction specified:
+  
+  * exists
+  
+  * is in the `normal` state
+
+### Resolve
+
+A **resolve** affects the client account by:
+
+* increasing the `available` amount by the specified transaction `amount`
+
+* increasing the `held` amount by the same value
+
+This also sets the specified `transaction` back into the `Normal` state.
+
+#### Preconditions
+
+* the client account:
+  
+  * exists
+  
+  * is not locked
+
+* the transaction specified:
+  
+  * exists
+  
+  * is in the `Disputed` state
+
+### Chargeback
+
+A **chargeback** affects the client account by:
+
+* decreasing the `available` amount by the specified transaction `amount`
+
+* decreasing the `held` amount by the same value
+
+* decreasing the `total` amount by the same value
+
+Additionally, this sets the client account into the **locked** state.
+
+This also sets the specified `transaction` into the `Reversed` state.
+
+#### Preconditions
+
+* the client account:
+  
+  * exists
+  
+  * is not locked
+
+* the transaction specified:
+  
+  * exists
+  
+  * is in the `disputed` state
 
 ## Test cases:
 
@@ -129,7 +235,7 @@ The state of the account must be considered during the processing of a transacti
   - on a tx not under dispute
 - chargeback
   - on a tx that doesn't exist - noop
-  - on an acount already frozen
+  - on an account already frozen
 - disputes work
   - on deposits
   - on withdrawals
@@ -148,8 +254,7 @@ The state of the account must be considered during the processing of a transacti
 * How the a DB transactions manager would be implemented
 
 * Explain dependencies:
-
+  
   * anyhow
-
 
 *
