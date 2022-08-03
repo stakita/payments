@@ -182,7 +182,7 @@ impl<'a> TransactionLine {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // use super::*;
     // use crate::core::entities::account::Account;
 
     // struct MockPaymentService {}
