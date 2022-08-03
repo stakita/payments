@@ -56,13 +56,13 @@ impl PaymentServiceTrait for PaymentService {
         // store the transaction
         self.tx_store.update(
             tx_id,
-            Transaction {
+            Transaction::new(
                 tx_id,
-                tx_type: Transaction::transaction_type_encode(TransactionType::Deposit),
+                Transaction::transaction_type_encode(TransactionType::Deposit),
                 client_id,
                 amount,
-                state: Transaction::transaction_state_encode(TransactionState::Normal),
-            },
+                Transaction::transaction_state_encode(TransactionState::Normal),
+            ),
         );
 
         // update account
@@ -98,13 +98,13 @@ impl PaymentServiceTrait for PaymentService {
 
         self.tx_store.update(
             tx_id,
-            Transaction {
+            Transaction::new(
                 tx_id,
-                tx_type: Transaction::transaction_type_encode(TransactionType::Withdrawal),
+                Transaction::transaction_type_encode(TransactionType::Withdrawal),
                 client_id,
                 amount,
-                state: Transaction::transaction_state_encode(TransactionState::Normal),
-            },
+                Transaction::transaction_state_encode(TransactionState::Normal),
+            ),
         );
 
         // update account

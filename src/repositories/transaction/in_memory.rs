@@ -1,4 +1,3 @@
-
 use std::collections::BTreeMap;
 
 use super::TransactionRepositoryTrait;
@@ -40,7 +39,6 @@ impl TransactionRepositoryTrait for TransactionRepositoryInMemory {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -49,20 +47,8 @@ mod tests {
     fn it_can_insert_and_find() {
         let mut tr = TransactionRepositoryInMemory::new();
 
-        let a = Transaction {
-            tx_id: 1600002,
-            tx_type: 1,
-            client_id: 42,
-            amount: 1.23,
-            state: 0,
-        };
-        let b = Transaction {
-            tx_id: 1600004,
-            tx_type: 1,
-            client_id: 21,
-            amount: 2.23,
-            state: 1,
-        };
+        let a = Transaction::new(1600002, 1, 42, 1.23, 0);
+        let b = Transaction::new(1600004, 1, 21, 2.23, 1);
 
         tr.update(a.tx_id, a.clone());
         tr.update(b.tx_id, b.clone());
@@ -88,27 +74,9 @@ mod tests {
     fn it_can_insert_and_find_all_sorted() {
         let mut tr = TransactionRepositoryInMemory::new();
 
-        let a = Transaction {
-            tx_id: 1600042,
-            tx_type: 1,
-            client_id: 42,
-            amount: 1.23,
-            state: 0,
-        };
-        let b = Transaction {
-            tx_id: 1600056,
-            tx_type: 1,
-            client_id: 21,
-            amount: 2.23,
-            state: 1,
-        };
-        let c = Transaction {
-            tx_id: 16,
-            tx_type: 0,
-            client_id: 1,
-            amount: 700.11,
-            state: 2,
-        };
+        let a = Transaction::new(1600042, 1, 42, 1.23, 0);
+        let b = Transaction::new(1600056, 1, 21, 2.23, 1);
+        let c = Transaction::new(16, 0, 1, 700.11, 2);
 
         tr.update(a.tx_id, a.clone());
         tr.update(b.tx_id, b.clone());
@@ -122,5 +90,4 @@ mod tests {
         assert_eq!(res[1], &a);
         assert_eq!(res[2], &b);
     }
-
 }

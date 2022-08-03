@@ -60,13 +60,13 @@ fn deposit_creates_in_a_new_account() {
     let client_id = 42;
     let expected_ac = Account::new(client_id, 42.42, 0.0, 42.42, false);
     let tx_id = 1;
-    let expected_tr = Transaction {
+    let expected_tr = Transaction::new(
         tx_id,
-        tx_type: TransactionType::Deposit as u8,
+        TransactionType::Deposit as u8,
         client_id,
-        amount: 42.42,
-        state: TransactionState::Normal as u8,
-    };
+        42.42,
+        TransactionState::Normal as u8,
+    );
 
     let acc = ps.get_account(client_id);
     assert_eq!(acc, None);
@@ -89,13 +89,13 @@ fn deposit_updates_total_and_available() {
 
     let expected_ac = Account::new(client_id, 0.0001, 0.0, 0.0001, false);
     let tx_id = 2;
-    let expected_tr = Transaction {
+    let expected_tr = Transaction::new(
         tx_id,
-        tx_type: TransactionType::Deposit as u8,
+        TransactionType::Deposit as u8,
         client_id,
-        amount: 0.0001,
-        state: TransactionState::Normal as u8,
-    };
+        0.0001,
+        TransactionState::Normal as u8,
+    );
 
     assert_eq!((), ps.deposit(client_id, tx_id, 0.0001).unwrap()); // Smallest deposit
 
@@ -108,13 +108,13 @@ fn deposit_updates_total_and_available() {
         ..expected_ac
     };
     let tx_id = 3;
-    let expected_tr = Transaction {
+    let expected_tr = Transaction::new(
         tx_id,
-        tx_type: TransactionType::Deposit as u8,
+        TransactionType::Deposit as u8,
         client_id,
-        amount: 0.0001,
-        state: TransactionState::Normal as u8,
-    };
+        0.0001,
+        TransactionState::Normal as u8,
+    );
 
     assert_eq!((), ps.deposit(client_id, tx_id, 0.0001).unwrap()); // Smallest deposit
 
@@ -155,13 +155,13 @@ fn withdrawal_updates_total_and_available() {
 
     let expected_ac = Account::new(client_id, 49.9999, 10.0, 59.9999, false);
     let tx_id = 1;
-    let expected_tr = Transaction {
+    let expected_tr = Transaction::new(
         tx_id,
-        tx_type: TransactionType::Withdrawal as u8,
+        TransactionType::Withdrawal as u8,
         client_id,
-        amount: 0.0001,
-        state: TransactionState::Normal as u8,
-    };
+        0.0001,
+        TransactionState::Normal as u8,
+    );
 
     assert_eq!((), ps.withdrawal(client_id, tx_id, 0.0001).unwrap());
 
@@ -176,13 +176,13 @@ fn withdrawal_updates_total_and_available() {
     let expected_ac = Account::new(client_id, 0.0, 10.0, 10.0, false);
 
     let tx_id = 2;
-    let expected_tr = Transaction {
+    let expected_tr = Transaction::new(
         tx_id,
-        tx_type: TransactionType::Withdrawal as u8,
+        TransactionType::Withdrawal as u8,
         client_id,
-        amount: 49.9999,
-        state: TransactionState::Normal as u8,
-    };
+        49.9999,
+        TransactionState::Normal as u8,
+    );
 
     assert_eq!((), ps.withdrawal(client_id, tx_id, 49.9999).unwrap());
 
