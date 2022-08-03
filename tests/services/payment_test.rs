@@ -11,8 +11,8 @@ fn build_payments_service() -> PaymentService {
     PaymentService::new(transaction_repository, account_repository)
 }
 
-fn build_payments_service_with_locked_account(client_id: u16) -> PaymentService {
-    let transaction_repository = Box::new(TransactionRepositoryInMemory::new());
+fn build_payments_service_with_locked_account(client_id: u16, tx_id: u32) -> PaymentService {
+    let mut transaction_repository = Box::new(TransactionRepositoryInMemory::new());
     let mut account_repository = Box::new(AccountRepositoryInMemory::new());
 
     // Create a locked account
@@ -21,6 +21,19 @@ fn build_payments_service_with_locked_account(client_id: u16) -> PaymentService 
         .as_mut()
         .store
         .insert(client_id, expected_ac.clone());
+
+    // Create a transaction
+    let tx1 = Transaction::new(
+        tx_id,
+        TransactionType::Deposit as u8,
+        client_id,
+        42.42,
+        TransactionState::Normal as u8,
+    );
+    transaction_repository
+        .as_mut()
+        .store
+        .insert(tx1.tx_id, tx1.clone());
 
     PaymentService::new(transaction_repository, account_repository)
 }
@@ -83,6 +96,31 @@ fn deposit_creates_in_a_new_account() {
 }
 
 #[test]
+fn transactions_on_locked_accounts_fail() {
+    let client_id = 42;
+    let existing_tx_id = 1;
+    let mut ps = build_payments_service_with_locked_account(client_id, existing_tx_id);
+
+    let initial_ac = ps.get_account(client_id).unwrap().clone();
+    let initial_tx = ps.get_transaction(existing_tx_id).unwrap().clone();
+
+    let tx_id = 2;
+    assert!(ps.deposit(client_id, tx_id, 0.01).is_err());
+
+    let tx_id = 3;
+    assert!(ps.withdrawal(client_id, tx_id, 0.01).is_err());
+
+    assert!(ps.dispute(client_id, existing_tx_id).is_err());
+
+    // assert!(ps.resolve(client_id, existing_tx_id).is_err());
+
+    // assert!(ps.chargeback(client_id, tx_existing_tx_idid).is_err());
+
+    assert_eq!(ps.get_account(client_id).unwrap(), &initial_ac); // No change
+    assert_eq!(ps.get_transaction(existing_tx_id).unwrap(), &initial_tx); // No change to transaction
+}
+
+#[test]
 fn deposit_updates_total_and_available() {
     let client_id = 42;
     let mut ps = build_payments_service_with_empty_account(client_id);
@@ -126,20 +164,6 @@ fn deposit_updates_total_and_available() {
 
     println!("accounts: {:?}", ps.get_accounts());
     println!("transactions: {:?}", ps.get_transactions());
-}
-
-#[test]
-fn deposit_does_not_change_locked_account() {
-    let client_id = 42;
-    let mut ps = build_payments_service_with_locked_account(client_id);
-
-    let initial_ac = ps.get_account(client_id).unwrap().clone();
-
-    let tx_id = 1;
-    assert!(ps.deposit(client_id, tx_id, 0.01).is_err());
-
-    assert_eq!(ps.get_account(client_id).unwrap(), &initial_ac); // No change
-    assert_eq!(ps.get_transaction(tx_id), None); // No stored transaction
 }
 
 #[test]
@@ -218,20 +242,6 @@ fn withdrawal_fails_if_insufficient_funds() {
 
     println!("accounts: {:?}", ps.get_accounts());
     println!("transactions: {:?}", ps.get_transactions());
-}
-
-#[test]
-fn withdrawal_does_not_change_locked_account() {
-    let client_id = 42;
-    let mut ps = build_payments_service_with_locked_account(client_id);
-
-    let initial_ac = ps.get_account(client_id).unwrap().clone();
-
-    let tx_id = 1;
-    assert!(ps.withdrawal(client_id, tx_id, 0.01).is_err());
-
-    assert_eq!(ps.get_account(client_id).unwrap(), &initial_ac); // No change
-    assert_eq!(ps.get_transaction(tx_id), None); // No stored transaction
 }
 
 #[test]
@@ -328,20 +338,6 @@ fn dispute_on_non_existant_transaction_fails() {
     let tx_id = 1;
 
     assert!(ps.dispute(client_id, tx_id).is_err());
-}
-
-#[test]
-fn dispute_does_not_change_locked_account() {
-    let client_id = 42;
-    let mut ps = build_payments_service_with_locked_account(client_id);
-
-    let initial_ac = ps.get_account(client_id).unwrap().clone();
-
-    let tx_id = 1;
-    assert!(ps.dispute(client_id, tx_id).is_err());
-
-    assert_eq!(ps.get_account(client_id).unwrap(), &initial_ac); // No change
-    assert_eq!(ps.get_transaction(tx_id), None); // No stored transaction
 }
 
 #[test]
