@@ -19,13 +19,11 @@ A toy payments engine
   - This provides the specified accuracy on transactions and allows for a maximum transaction (and account total) value of 3.4x10^34 which should be sufficient (may need to revisit depending on inflation trends)
   
   - Transformation at the output is via a f64 floating point representation which may truncate results, but could be fixed if it is a problem by output from the fixed point representation
-
 - Because the dispute, resolve and chargeback operations don't store amounts, we need to be able to reference the originating deposit or withdrawal transactions at any time after creation
   
   * The current specification states the transaction ID is a `u32` integer which implies `2^32` (~4 billion) records which is probably within the bounds of a single systems memory configuration (for development), but an obvious change to the system would be to make these transaction IDs opaque data blobs (say hashes) or `u64` integers which would require a dedicated data store
   
   * A key-value or relational database could implement this, however we use a memory backed store with an abstracted interface to allow simpler implementation during development with the option of changing out the repository implementation at some point in the future
-
 * The CLI client is the driving application of the core entities business logic, however the service level interfaces should be set up for possible integration into a web gateway or as a consumer of a streaming feed (e.g. Kafka)
   
   * Transactions processed at the service level should have observable outcomes in response to a request to process a transaction:
@@ -216,6 +214,22 @@ This also sets the specified `transaction` into the `Reversed` state.
   
   * is in the `disputed` state
 
-## Testing Notes
+## Future Work
 
-The majority of the testing is in the form of integration test. I currently don't have enough of a handle on the state of Rust mocking libraries to be able to mock out dependencies for testing.
+### Testing
+
+The majority of the testing is in the form of integration test. More of this would ordinarily be done via unit testing which would eliminate much of the complex setup code for the tests. I currently don't have enough of a handle on the state of Rust mocking libraries (or patterns for manually mocking) to be able to mock out dependencies for testing. But this would be an obvious improvement to simplify the tests and increase their clarity.
+
+### Database Backend
+
+The repository layer is designed to be a general abstraction on a data store. At the moment this is implemented as an in memory store (BTreeMap). This was to keep things simple as well as handing off key sorting to the data structure.
+
+An obvious change would be to integrate a database client. This would likely require some shared structures to allow for transaction semantics on the operations. None of this is implemented nor are the placeholders for this, but these features would be added to the repository layer if required.
+
+### Repeated Code
+
+There is a number of repeated code segments in the `PaymentService` implementation. I would normally refactor this out to avoid repetition however I wasn't able to do this due to violations of the borrow rules, or lacking lifetime specifications both of which I only have a moderate working understanding of. I suspect the real issue here is the attempt at using traditional OOD dependency injection for the repository objects. My guess is that there are more appropriate patterns used in Rust to achieve a similar goal, but I'm still learning.
+
+### Entity States
+
+Currently the state transition logic is encoded in the transaction handlers. This makes it difficult to test in isolation. One improvement would be to hand off next state calculation to the core entity objects. This would allow for the state transition rules to be enforced by Rust's type system and also allow for this logic to be unit tested as a feature in the entity object layer.
