@@ -68,9 +68,15 @@ fn process_lines(
             anyhow!("Error processing input line {}: {}", i + line_offset, error)
         })?;
 
-        process_transaction(&transaction, &mut payment_service).map_err(|error| {
-            anyhow!("Error processing input line {}: {}", i + line_offset, error)
-        })?;
+        let _result = process_transaction(&transaction, &mut payment_service);
+
+        // Handle error based on client requirements.
+        // match _result {
+        //     Err(error) => {
+        //         eprintln!("Error processing input line {}: {}", i + line_offset, error);
+        //     }
+        //     Ok(_) => (),
+        // }
     }
 
     println!("client, available, held, total, locked");
