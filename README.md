@@ -4,22 +4,6 @@ A toy payments engine
 
 ## Assumptions:
 
-* Representation of dollar values
-  
-  * With 4 decimal places precision on amounts, this implies 10k distinct steps per dollar - minimum resolvable amount is 0.0001 dollars
-  
-  * Assuming normal real world amounts - expect transactions to be less \$1 billion (\$1e9) - may need to revisit this assumption if inflation continues at current trends
-  
-  * This means we need to resolve steps: `1e9 * 1e4 = 1e13` - this can be represented in `ceil(log2(1e13)) = 44 bits`
-  
-  * This is less the mantissa for a 64-bit floating point number (55 bits) so we should be able to represent this range accurately in that representation
-  
-  * If requirements dictate a larger maximum transaction amount, switching to a fixed point representation (e.g `u64` for dollar amount + `u16` for decimal amount) would allow for accuracy over a wider range
-  
-  * This could be an issue for the stored amounts fields on accounts, which could also be updated to be fixed point representation
-  
-  * Will be using `f64` for amount representations for this project for both transactions and account values
-
 * Deposit and Withdrawal transactions will always have a positive value in the `amount` field - deposit of a negative amount would just be a withdrawal
 
 * Dispute resolution operations (dispute, resolve, chargeback) can only occur on deposit or withdrawal operations
@@ -28,7 +12,15 @@ A toy payments engine
 
 ## Design considerations
 
-* Because the dispute, resolve and chargeback operations don't store amounts, we need to be able to reference the originating deposit or withdrawal transactions at any time after creation
+* Representation of dollar values
+  
+  - This project uses fixed point representation implemented by upscaling values by a factor of 10,000, and transforming values to i128 integers
+  
+  - This provides the specified accuracy on transactions and allows for a maximum transaction (and account total) value of 3.4x10^34 which should be sufficient (may need to revisit depending on inflation trends)
+  
+  - Transformation at the output is via a f64 floating point representation which may truncate results, but could be fixed if it is a problem by output from the fixed point representation
+
+- Because the dispute, resolve and chargeback operations don't store amounts, we need to be able to reference the originating deposit or withdrawal transactions at any time after creation
   
   * The current specification states the transaction ID is a `u32` integer which implies `2^32` (~4 billion) records which is probably within the bounds of a single systems memory configuration (for development), but an obvious change to the system would be to make these transaction IDs opaque data blobs (say hashes) or `u64` integers which would require a dedicated data store
   
@@ -224,37 +216,6 @@ This also sets the specified `transaction` into the `Reversed` state.
   
   * is in the `disputed` state
 
-## Test cases:
+## Testing Notes
 
-- dispute
-  - on a tx that doesn't exist - noop
-  - on a tx already under dispute
-  - on a transaction where client_id doesn't match
-- resolve
-  - on a tx that doesn't exist - noop
-  - on a tx not under dispute
-- chargeback
-  - on a tx that doesn't exist - noop
-  - on an account already frozen
-- disputes work
-  - on deposits
-  - on withdrawals
-  - account can be disputed multiple times if not locked
-  - held totals are updated with multiple unresolved disputes
-- locked accounts
-  * deposits and withdrawals are rejected/ignored for locked accounts
-  - further disputes/resolve/chargeback operations are rejected for locked accounts
-- Disputed amount takes account below zero
-- deposits and withdrawals can't occur on a locked account
-
-## To note:
-
-* Where a DB implementation would go
-
-* How the a DB transactions manager would be implemented
-
-* Explain dependencies:
-  
-  * anyhow
-
-*
+The majority of the testing is in the form of integration test. I currently don't have enough of a handle on the state of Rust mocking libraries to be able to mock out dependencies for testing.
