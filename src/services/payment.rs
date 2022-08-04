@@ -43,8 +43,6 @@ impl PaymentService {
 
 impl PaymentServiceTrait for PaymentService {
     fn deposit(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
-        eprintln!("deposit");
-
         // get account, creating it if needed
         let acc = self.ac_store.find_or_create(client_id).unwrap();
 
@@ -79,7 +77,6 @@ impl PaymentServiceTrait for PaymentService {
     }
 
     fn withdrawal(&mut self, client_id: u16, tx_id: u32, amount: f64) -> Result<()> {
-        eprintln!("withdrawal");
         // get account
         let acc = match self.ac_store.find(client_id) {
             Some(a) => a,
