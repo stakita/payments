@@ -25,7 +25,7 @@ impl Account {
     }
 
     pub fn from_fixed(value: i128) -> f64 {
-        (value as f64 / FIXED_DECIMAL_SCALING as f64).round() as f64
+        (value as f64 / FIXED_DECIMAL_SCALING as f64) as f64
     }
 
     pub fn available(&self) -> i128 {
